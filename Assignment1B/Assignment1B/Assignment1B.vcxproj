@@ -32,6 +32,21 @@
     <ClCompile Include="..\source\graphics\Window.cpp" />
     <ClCompile Include="..\source\utils\Rectangle.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\core\Board.h" />
+    <ClInclude Include="..\include\core\Game.h" />
+    <ClInclude Include="..\include\core\Tile.h" />
+    <ClInclude Include="..\include\entities\Entity.h" />
+    <ClInclude Include="..\include\entities\Fire.h" />
+    <ClInclude Include="..\include\entities\Player.h" />
+    <ClInclude Include="..\include\entities\StaticEntities.h" />
+    <ClInclude Include="..\include\graphics\AnimBase.h" />
+    <ClInclude Include="..\include\graphics\AnimDirectional.h" />
+    <ClInclude Include="..\include\graphics\SpriteSheet.h" />
+    <ClInclude Include="..\include\graphics\Window.h" />
+    <ClInclude Include="..\include\utils\Rectangle.h" />
+    <ClInclude Include="..\include\utils\Vector2.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
