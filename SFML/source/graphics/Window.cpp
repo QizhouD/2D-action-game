@@ -55,9 +55,9 @@ void Window::loadFont(const std::string& fontFile)
 
     // Menu UI
     menuTitleText.setFont(guiFont);
-    menuTitleText.setCharacterSize(72);
-    menuTitleText.setFillColor(sf::Color::Yellow);
-    menuTitleText.setString("Mini-Game");
+    menuTitleText.setCharacterSize(80);
+    menuTitleText.setFillColor(sf::Color::Red);
+    menuTitleText.setString("Dwarf VS Mushrooms");
 
     menuPromptText.setFont(guiFont);
     menuPromptText.setCharacterSize(36);
