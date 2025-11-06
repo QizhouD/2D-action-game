@@ -2,6 +2,8 @@
 #include "../../include/entities/Entity.h"
 #include "../../include/entities/StaticEntities.h"
 #include "../../include/entities/Player.h"
+#include "../../include/entities/Fire.h"
+#include "../../include/entities/Mushroom.h"
 #include "../../include/utils/Rectangle.h"
 #include "../../include/core/Game.h"
 #include "../../include/core/ServiceLocator.h"
@@ -9,8 +11,6 @@
 
 GameplaySystem::GameplaySystem() {
     // Optional: If required, set a component mask.
-    // For gameplay, we typically process collisions for static entities.
-    // In this case, we don't enforce a strict mask because we want to process any entity except the player.
 }
 
 void GameplaySystem::update(Game* game, Entity* entity, float) {
@@ -28,19 +28,13 @@ void GameplaySystem::update(Game* game, Entity* entity, float) {
 
     // Check if the player and this entity collide.
     if (playerBB.intersects(entityBB)) {
-        std::cout << "[DEBUG] Collision detected between player and entity ID: " << entity->getID() << std::endl;
         switch (entity->getEntityType()) {
         case EntityType::POTION:
         {
-            // Process collision with a Potion.
             Potion* pot = dynamic_cast<Potion*>(entity);
             if (pot) {
                 int potionHealth = pot->getHealth();
-                // Update the player's health.
                 player->getHealthComp()->changeHealth(potionHealth);
-                std::cout << "Potion collision: Restored " << potionHealth
-                    << " health, new health: " << player->getHealthComp()->getHealth() << std::endl;
-                // Mark the potion for deletion.
                 entity->deleteEntity();
                 if (player->getObserver()) {
                     player->getObserver()->onPotionCollected();
@@ -51,23 +45,49 @@ void GameplaySystem::update(Game* game, Entity* entity, float) {
         }
         case EntityType::LOG:
         {
-            // Process collision with a Log.
             Log* logEntity = dynamic_cast<Log*>(entity);
-            if (logEntity) {
-                // Only process if the player is attacking.
-                if (player->isAttacking()) {
-                    int woodCollected = logEntity->getWood();
-                    player->addWood(woodCollected);
-                    std::cout << "Log collision: Collected " << woodCollected
-                        << " wood, total wood: " << player->getWood() << std::endl;
-                    // Mark the log for deletion.
-                    entity->deleteEntity();
-                }
+            if (logEntity && player->isAttacking()) {
+                int woodCollected = logEntity->getWood();
+                player->addWood(woodCollected);
+                entity->deleteEntity();
             }
+            break;
+        }
+        case EntityType::MUSHROOM:
+        {
+            // Damage player on contact
+            player->getHealthComp()->changeHealth(-1);
             break;
         }
         default:
             break;
+        }
+    }
+
+    // Fire projectile vs Mushroom collisions
+    if (entity->getEntityType() == EntityType::MUSHROOM) {
+        Mushroom* mush = dynamic_cast<Mushroom*>(entity);
+        if (mush) {
+            for (const auto& e : game->getEntities()) {
+                if (e->getEntityType() == EntityType::FIRE) {
+                    if (e->getBoundingBox().intersects(entity->getBoundingBox())) {
+                        // Damage mushroom and remove fire
+                        mush->getHealthComp()->changeHealth(-10);
+                        e->deleteEntity();
+                        if (mush->getHealthComp()->getHealth() <= 0) {
+                            entity->deleteEntity();
+                        }
+                        break; // handle one fire per frame
+                    }
+                }
+            }
+        }
+    }
+
+    // Player reached goal -> load next level
+    if (entity->getEntityType() == EntityType::GOAL) {
+        if (playerBB.intersects(entityBB)) {
+            game->loadNextLevel();
         }
     }
 }

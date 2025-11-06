@@ -45,3 +45,20 @@ public:
 protected:
     const int woodAdded = 15;
 };
+
+// Simple goal/exit entity: reaching it will advance to the next level.
+class Goal : public Entity {
+public:
+    Goal() : Entity(EntityType::GOAL) {}
+    ~Goal() {}
+
+    void init(const std::string& textureFile, float scale) override {
+        Entity::init(textureFile, scale);
+        sf::Vector2f pos = getPosition();
+        boundingBox.setTopLeft(toCustom(pos));
+        sf::Vector2f bottomRightPos = { pos.x + bboxSize.x, pos.y + bboxSize.y };
+        boundingBox.setBottomRight(toCustom(bottomRightPos));
+    }
+
+    void update(Game*, float = 1.0f) override {}
+};

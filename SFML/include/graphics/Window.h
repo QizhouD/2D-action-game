@@ -42,6 +42,15 @@ private:
     sf::Text fpsText;
     sf::Text pausedText;
     sf::Text healthText;
+    sf::RectangleShape healthBarBg;
+    sf::RectangleShape healthBar;
+
+    // Menu UI
+    sf::Text menuTitleText;
+    sf::Text menuPromptText;
+
+    // Potion icons for health segments UI
+    sf::Texture potionIconTexture;
 
     bool isDone;
     bool isFullscreen;

@@ -12,6 +12,7 @@
 #include "../../include/utils/Observer.h"
 #include <unordered_map>
 #include <functional> 
+#include <random>
 
 class InputHandler;
 class Player;
@@ -25,6 +26,8 @@ public:
     std::vector<std::shared_ptr<Entity>> entities; // Entities sharing the same component structure
     Bitmask componentMask;                         // Bitmask representing common components
 };
+
+enum class GameState { Menu, Playing };
 
 class Game {
 public:
@@ -57,6 +60,13 @@ public:
 
     EntityID getIDCounter();
     std::shared_ptr<Entity> getEntity(unsigned int idx);
+    const std::vector<std::shared_ptr<Entity>>& getEntities() const { return entities; }
+
+    bool isInMenu() const { return gameState == GameState::Menu; }
+    void startGame() { gameState = GameState::Playing; }
+
+    bool loadNextLevel();
+    bool loadLevelByIndex(int index);
 
     template <typename T>
     std::shared_ptr<T> buildEntityAt(const std::string& filename, int col, int row)
@@ -71,6 +81,7 @@ public:
     }
 
 private:
+    void parseLevelLines(const std::vector<std::string>& lines);
 
     //method specific to Archetypes ECS
     void updateArchetypes(float elapsed);
@@ -96,4 +107,15 @@ private:
     // Added Observer Pattern support
     std::shared_ptr<AchievementObserver> achievementObserver;
     std::unordered_map<EntityType, std::function<void(Entity*)>> collisionCallbacks;
+
+    GameState gameState = GameState::Menu;
+
+    // Level management and spawning
+    int currentLevelIndex = 0;
+    std::mt19937 rng;
+    float spawnTimer = 0.f;
+    float nextSpawnInterval = 3.0f;
+    float spawnIntervalMin = 2.0f;
+    float spawnIntervalMax = 5.0f;
+    int maxMushrooms = 8;
 };

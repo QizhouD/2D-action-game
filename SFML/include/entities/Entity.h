@@ -18,7 +18,9 @@ enum class EntityType {
     PLAYER = 0,
     POTION = 1,
     LOG = 2,
-    FIRE = 3
+    FIRE = 3,
+    MUSHROOM = 4,
+    GOAL = 5
 };
 
 class Entity {

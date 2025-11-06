@@ -10,6 +10,9 @@
 #include "../../include/utils/Observer.h"
 #include "../../include/core/AudioManager.h"
 #include "../../include/core/ServiceLocator.h"
+#include "../../include/entities/Mushroom.h"
+#include <SFML/Window/Keyboard.hpp>
+#include <fstream>
 
 void Game::registerCollisionCallback(EntityType type, std::function<void(Entity*)> callback) {
     collisionCallbacks[type] = callback;
@@ -21,6 +24,9 @@ Game::Game(ECSType type)
     : paused(false), entityCounter(1), ecsType(type)
 {
     inputHandler = std::make_unique<InputHandler>();
+
+    // RNG seed
+    std::random_device rd; rng.seed(rd());
 
     //added the remaining systems
     systems.push_back(std::make_shared<InputSystem>());
@@ -67,21 +73,11 @@ void Game::bigArray(float elapsed) {
 
 Game::~Game() {}
 
-void Game::init(std::vector<std::string> lines)
+void Game::parseLevelLines(const std::vector<std::string>& lines)
 {
     size_t h = lines.size();
     if (h == 0) throw std::exception("No data in level file");
     size_t w = static_cast<size_t>(-1);
-
-    window.loadFont("font/AmaticSC-Regular.ttf");
-    window.setTitle("Mini-Game");
-
-    // INIT AUDIO MANAGER and REGISTER SERVICE LOCATOR
-    auto audio = std::make_shared<AudioManager>();
-    audio->loadSound("pickup", "audio/potion_collect.wav");
-    audio->loadSound("fire", "audio/fire.wav");
-    audio->loadSound("axe", "audio/sword-slash.wav");
-    ServiceLocator::provide(audio);
 
     auto it = lines.cbegin();
     int row = 0;
@@ -130,9 +126,23 @@ void Game::init(std::vector<std::string> lines)
                     // Observer Pattern: Create and assign
                     achievementObserver = std::make_shared<AchievementObserver>();
                     player->setObserver(achievementObserver);
-					// Register collision callbacks
+                    // Register collision callbacks
                     registerCollisionCallback(EntityType::POTION, std::bind(&Player::handlePotionCollision, player.get(), std::placeholders::_1));
                     registerCollisionCallback(EntityType::LOG, std::bind(&Player::handleLogCollision, player.get(), std::placeholders::_1));
+                    break;
+                }
+                case 'm':
+                {
+                    auto mush = buildEntityAt<Mushroom>("img/mushroom50-50.png", col, row);
+                    addEntity(mush);
+                    board->addTile(col, row, tileScale, TileType::CORRIDOR, "img/floor.png");
+                    break;
+                }
+                case 'g':
+                {
+                    auto goal = buildEntityAt<Goal>("img/potion.png", col, row);
+                    addEntity(goal);
+                    board->addTile(col, row, tileScale, TileType::CORRIDOR, "img/floor.png");
                     break;
                 }
             }
@@ -142,6 +152,26 @@ void Game::init(std::vector<std::string> lines)
         row++;
         it++;
     }
+}
+
+void Game::init(std::vector<std::string> lines)
+{
+    window.loadFont("font/AmaticSC-Regular.ttf");
+    window.setTitle("Mini-Game");
+
+    // INIT AUDIO MANAGER and REGISTER SERVICE LOCATOR
+    auto audio = std::make_shared<AudioManager>();
+    audio->loadSound("pickup", "audio/potion_collect.wav");
+    audio->loadSound("fire", "audio/fire.wav");
+    audio->loadSound("axe", "audio/sword-slash.wav");
+    ServiceLocator::provide(audio);
+
+    currentLevelIndex = 0;
+    entities.clear();
+    board.reset();
+    player.reset();
+
+    parseLevelLines(lines);
 }
 
 void Game::addEntity(std::shared_ptr<Entity> newEntity)
@@ -165,6 +195,15 @@ void Game::addEntity(std::shared_ptr<Entity> newEntity)
 
 void Game::handleInput()
 {
+    // If we are in the main menu, pressing Enter will start the game
+    if (isInMenu()) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
+            startGame();
+        }
+        window.update();
+        return;
+    }
+
     auto cmd = inputHandler->handleInput();
     if (cmd) { cmd->execute(*this); }
     if (player) { player->handleInput(*this); }
@@ -172,6 +211,11 @@ void Game::handleInput()
 
 void Game::update(float elapsed)
 {
+    // In menu, only process window events and skip game updates
+    if (isInMenu()) {
+        window.update();
+        return;
+    }
 
     if (!paused) {
         bigArray(elapsed);
@@ -210,6 +254,46 @@ void Game::update(float elapsed)
         entities.end()
     );
 
+    // Random Mushroom spawning when playing
+    if (!isInMenu() && !paused) {
+        // Count existing mushrooms
+        int mushCount = 0;
+        for (const auto& e : entities) {
+            if (e->getEntityType() == EntityType::MUSHROOM) mushCount++;
+        }
+        spawnTimer += elapsed;
+        if (mushCount < maxMushrooms && spawnTimer >= nextSpawnInterval) {
+            // choose random tile within window bounds
+            auto ws = window.getWindowSize();
+            int cols = static_cast<int>(ws.x / (spriteWH * tileScale));
+            int rows = static_cast<int>(ws.y / (spriteWH * tileScale));
+            if (cols > 0 && rows > 0) {
+                std::uniform_int_distribution<int> cx(0, cols - 1);
+                std::uniform_int_distribution<int> cy(0, rows - 1);
+                int col = cx(rng);
+                int row = cy(rng);
+
+                // avoid spawning too close to player
+                bool farEnough = true;
+                if (player) {
+                    float px = player->getPosition().x;
+                    float py = player->getPosition().y;
+                    float x = col * spriteWH * tileScale;
+                    float y = row * spriteWH * tileScale;
+                    float dx = px - x; float dy = py - y;
+                    farEnough = (dx*dx + dy*dy) > (200.f * 200.f);
+                }
+                if (farEnough) {
+                    auto mush = buildEntityAt<Mushroom>("img/mushroom50-50.png", col, row);
+                    addEntity(mush);
+                }
+            }
+            spawnTimer = 0.f;
+            std::uniform_real_distribution<float> nd(spawnIntervalMin, spawnIntervalMax);
+            nextSpawnInterval = nd(rng);
+        }
+    }
+
     window.update();
 }
 
@@ -247,6 +331,47 @@ void Game::render(float elapsed)
     }
     window.drawGUI(*this);
     window.endDraw();
+}
+
+bool Game::loadLevelByIndex(int index)
+{
+    std::ostringstream ss; ss << "levels/lvl" << index << ".txt";
+    std::ifstream levelRead{ ss.str() };
+    if (!levelRead) {
+        std::cout << "[Game] Level file not found: " << ss.str() << std::endl;
+        return false;
+    }
+    std::vector<std::string> lines;
+    while (levelRead) {
+        std::string line;
+        std::getline(levelRead, line);
+        if (!levelRead && line.empty()) break;
+        lines.emplace_back(line);
+    }
+
+    // reset world state (keep window/audio)
+    entities.clear();
+    board.reset();
+    player.reset();
+    achievementObserver.reset();
+
+    parseLevelLines(lines);
+
+    currentLevelIndex = index;
+    // reset spawn timer interval
+    spawnTimer = 0.f;
+    std::uniform_real_distribution<float> nd(spawnIntervalMin, spawnIntervalMax);
+    nextSpawnInterval = nd(rng);
+
+    // ensure we are in playing state
+    gameState = GameState::Playing;
+    return true;
+}
+
+bool Game::loadNextLevel()
+{
+    int nextIndex = currentLevelIndex + 1;
+    return loadLevelByIndex(nextIndex);
 }
 
 sf::Time Game::getElapsed() const
