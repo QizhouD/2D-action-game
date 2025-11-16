@@ -266,29 +266,42 @@ void Game::update(float elapsed)
         }
         spawnTimer += elapsed;
         if (mushCount < maxMushrooms && spawnTimer >= nextSpawnInterval) {
-            // choose random tile within window bounds
+            // choose random tile within window bounds, but avoid spawning inside solid terrain
             auto ws = window.getWindowSize();
             int cols = static_cast<int>(ws.x / (spriteWH * tileScale));
             int rows = static_cast<int>(ws.y / (spriteWH * tileScale));
             if (cols > 0 && rows > 0) {
                 std::uniform_int_distribution<int> cx(0, cols - 1);
                 std::uniform_int_distribution<int> cy(0, rows - 1);
-                int col = cx(rng);
-                int row = cy(rng);
 
-                // avoid spawning too close to player
-                bool farEnough = true;
-                if (player) {
-                    float px = player->getPosition().x;
-                    float py = player->getPosition().y;
-                    float x = col * spriteWH * tileScale;
-                    float y = row * spriteWH * tileScale;
-                    float dx = px - x; float dy = py - y;
-                    farEnough = (dx*dx + dy*dy) > (200.f * 200.f);
-                }
-                if (farEnough) {
+                // Try a few times to find a non-solid tile that's far enough from the player
+                const int maxAttempts = 20;
+                for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+                    int col = cx(rng);
+                    int row = cy(rng);
+
+                    // Skip if out of board bounds or solid
+                    if (!board || !board->inBounds(col, row) || board->isSolid(col, row)) {
+                        continue;
+                    }
+
+                    // avoid spawning too close to player
+                    bool farEnough = true;
+                    if (player) {
+                        float px = player->getPosition().x;
+                        float py = player->getPosition().y;
+                        float x = col * spriteWH * tileScale;
+                        float y = row * spriteWH * tileScale;
+                        float dx = px - x; float dy = py - y;
+                        farEnough = (dx*dx + dy*dy) > (200.f * 200.f);
+                    }
+                    if (!farEnough) {
+                        continue;
+                    }
+
                     auto mush = buildEntityAt<Mushroom>("img/mushroom50-50.png", col, row);
                     addEntity(mush);
+                    break; // spawned successfully
                 }
             }
             spawnTimer = 0.f;
