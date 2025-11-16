@@ -13,6 +13,7 @@
 #include "../../include/entities/Mushroom.h"
 #include <SFML/Window/Keyboard.hpp>
 #include <fstream>
+#include <cmath>
 
 void Game::registerCollisionCallback(EntityType type, std::function<void(Entity*)> callback) {
     collisionCallbacks[type] = callback;
@@ -232,6 +233,8 @@ void Game::update(float elapsed)
     else
         bigArray(elapsed);          // Use Big Array ECS (existing)
 
+    // Resolve tile collisions for the player (terrain vs player)
+    resolveTileCollisionsForPlayer(elapsed);
 
     // Collision handling for static entities.
     Rectangle& playerBB = player->getBoundingBox();
@@ -320,6 +323,100 @@ void Game::updatePackedArray(float elapsed) {
             }
         }
     }
+}
+
+void Game::resolveTileCollisionsForPlayer(float elapsed)
+{
+    if (!player || !board) return;
+
+    auto velComp = player->getVelocityComp();
+    sf::Vector2f vel(0.f, 0.f);
+    if (velComp) vel = velComp->getVelocity();
+
+    // Player current world position (top-left) and size from bounding box
+    auto& bb = player->getBoundingBox();
+    Vector2f tl = bb.getTopLeft();
+    Vector2f br = bb.getBottomRight();
+    sf::Vector2f size(br.x - tl.x, br.y - tl.y);
+    sf::Vector2f pos = player->getPosition();
+
+    const float tileSize = spriteWH * tileScale;
+
+    // ---- Resolve X axis ----
+    float nextX = pos.x + vel.x * elapsed;
+    sf::FloatRect aabbX(nextX, pos.y, size.x, size.y);
+
+    int topRow = board->worldToGrid(aabbX.top, tileSize);
+    int bottomRow = board->worldToGrid(aabbX.top + aabbX.height - 1.f, tileSize);
+    if (vel.x > 0.f) {
+        int rightCol = board->worldToGrid(aabbX.left + aabbX.width - 1.f, tileSize);
+        for (int gy = topRow; gy <= bottomRow; ++gy) {
+            if (!board->isSolid(rightCol, gy)) continue;
+            sf::FloatRect tb = board->tileBounds(rightCol, gy);
+            if (aabbX.intersects(tb)) {
+                nextX = tb.left - size.x;
+                aabbX.left = nextX;
+                if (velComp) vel.x = 0.f;
+                break; // resolved against the nearest tile on this side
+            }
+        }
+    }
+    else if (vel.x < 0.f) {
+        int leftCol = board->worldToGrid(aabbX.left, tileSize);
+        for (int gy = topRow; gy <= bottomRow; ++gy) {
+            if (!board->isSolid(leftCol, gy)) continue;
+            sf::FloatRect tb = board->tileBounds(leftCol, gy);
+            if (aabbX.intersects(tb)) {
+                nextX = tb.left + tb.width;
+                aabbX.left = nextX;
+                if (velComp) vel.x = 0.f;
+                break;
+            }
+        }
+    }
+    // Apply X correction
+    player->setPosition(nextX, pos.y);
+    pos.x = nextX;
+
+    // ---- Resolve Y axis ----
+    float nextY = pos.y + vel.y * elapsed;
+    sf::FloatRect aabbY(pos.x, nextY, size.x, size.y);
+
+    int leftCol = board->worldToGrid(aabbY.left, tileSize);
+    int rightCol = board->worldToGrid(aabbY.left + aabbY.width - 1.f, tileSize);
+
+    if (vel.y > 0.f) {
+        int bottomRow2 = board->worldToGrid(aabbY.top + aabbY.height - 1.f, tileSize);
+        for (int gx = leftCol; gx <= rightCol; ++gx) {
+            if (!board->isSolid(gx, bottomRow2)) continue;
+            sf::FloatRect tb = board->tileBounds(gx, bottomRow2);
+            if (aabbY.intersects(tb)) {
+                nextY = tb.top - size.y;
+                aabbY.top = nextY;
+                if (velComp) vel.y = 0.f;
+                break;
+            }
+        }
+    }
+    else if (vel.y < 0.f) {
+        int topRow2 = board->worldToGrid(aabbY.top, tileSize);
+        for (int gx = leftCol; gx <= rightCol; ++gx) {
+            if (!board->isSolid(gx, topRow2)) continue;
+            sf::FloatRect tb = board->tileBounds(gx, topRow2);
+            if (aabbY.intersects(tb)) {
+                nextY = tb.top + tb.height;
+                aabbY.top = nextY;
+                if (velComp) vel.y = 0.f;
+                break;
+            }
+        }
+    }
+
+    // Apply Y correction
+    player->setPosition(pos.x, nextY);
+
+    // Update possibly zeroed velocity back to component
+    if (velComp) velComp->setVelocity(vel.x, vel.y);
 }
 
 void Game::render(float elapsed)

@@ -82,6 +82,7 @@ public:
 
 private:
     void parseLevelLines(const std::vector<std::string>& lines);
+    void resolveTileCollisionsForPlayer(float elapsed);
 
     //method specific to Archetypes ECS
     void updateArchetypes(float elapsed);

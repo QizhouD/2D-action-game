@@ -14,6 +14,14 @@ public:
     void draw(class Window* wnd);
     bool inBounds(int x, int y) const;
 
+    // Collision query helpers
+    Tile* getTile(int gx, int gy) const;
+    bool isSolid(int gx, int gy) const;
+    // If a tile exists at (gx, gy), returns its world bounds; otherwise an empty rect (0,0,0,0)
+    sf::FloatRect tileBounds(int gx, int gy) const;
+    // Convert world coordinate to grid index using given tile size in pixels
+    int worldToGrid(float w, float tileSizePx) const;
+
 private:
     size_t width, height;
     std::vector<Tile*> grid;

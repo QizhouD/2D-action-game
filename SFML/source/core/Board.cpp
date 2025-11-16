@@ -1,6 +1,7 @@
 #include "../../include/core/Board.h"
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 
 Board::Board(size_t w, size_t h) : width(w), height(h) {
     grid.resize(width * height, nullptr);
@@ -50,4 +51,25 @@ void Board::draw(Window* wnd) {
             if (tile) tile->draw(wnd);
         }
     }
+}
+
+// ---- Collision helpers ----
+Tile* Board::getTile(int gx, int gy) const {
+    if (!inBounds(gx, gy)) return nullptr;
+    return grid[gy * static_cast<int>(width) + gx];
+}
+
+bool Board::isSolid(int gx, int gy) const {
+    Tile* t = getTile(gx, gy);
+    return t ? t->isSolid() : false;
+}
+
+sf::FloatRect Board::tileBounds(int gx, int gy) const {
+    Tile* t = getTile(gx, gy);
+    return t ? t->getBounds() : sf::FloatRect();
+}
+
+int Board::worldToGrid(float w, float tileSizePx) const {
+    if (tileSizePx <= 0.f) return 0;
+    return static_cast<int>(std::floor(w / tileSizePx));
 }

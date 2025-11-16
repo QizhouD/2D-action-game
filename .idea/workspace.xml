@@ -17,16 +17,13 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="Delete unused file">
+    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="fix:Menu UI upgrade">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/SFML.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/SFML.vcxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/core/Board.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Board.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/include/core/Game.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Game.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/entities/Entity.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/entities/Entity.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/entities/StaticEntities.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/entities/StaticEntities.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/graphics/Window.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/graphics/Window.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/core/Tile.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Tile.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/core/Board.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Board.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/core/Game.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Game.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,9 +56,13 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="mock://D:/Game-Engine/SFML/include/core/Game.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/include/core/Game.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/include/graphics/Window.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/source/core/Game.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/source/core/Game.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/source/graphics/Window.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/graphics/Window.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
@@ -95,7 +96,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -120,7 +121,9 @@
       <workItem from="1762083369111" duration="8315000" />
       <workItem from="1762172968627" duration="3043000" />
       <workItem from="1762439254448" duration="382000" />
-      <workItem from="1762439691769" duration="358000" />
+      <workItem from="1762439691769" duration="3248000" />
+      <workItem from="1762953281181" duration="838000" />
+      <workItem from="1763276709600" duration="4294000" />
     </task>
     <task id="LOCAL-00001" summary="Delete unused file">
       <option name="closed" value="true" />
@@ -130,14 +133,51 @@
       <option name="project" value="LOCAL" />
       <updated>1762098680443</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="feat:Adding a main menu, Random enemy spawning，player UI with health bar(unfinished)">
+      <option name="closed" value="true" />
+      <created>1762440111074</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762440111074</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat:Adding a main menu, Random enemy spawning，player UI with health bar(unfinished)">
+      <option name="closed" value="true" />
+      <created>1762440129882</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1762440129882</updated>
+    </task>
+    <task id="LOCAL-00004" summary="fix:Menu UI upgrade">
+      <option name="closed" value="true" />
+      <created>1762442940424</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762442940424</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Delete unused file" />
-    <option name="LAST_COMMIT_MESSAGE" value="Delete unused file" />
+    <MESSAGE value="feat:Adding a main menu, Random enemy spawning，player UI with health bar(unfinished)" />
+    <MESSAGE value="fix:Menu UI upgrade" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix:Menu UI upgrade" />
   </component>
 </project>
