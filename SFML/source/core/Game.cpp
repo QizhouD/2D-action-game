@@ -63,6 +63,7 @@ Game::Game(ECSType type)
 void Game::bigArray(float elapsed) {
     for (const auto& sys : systems) {
         for (auto& ent : entities) {
+            if (!ent) { continue; }
             if (sys->validate(ent.get())) {
                 sys->update(this, ent.get(), elapsed);
             }
@@ -177,6 +178,7 @@ void Game::init(std::vector<std::string> lines)
 
 void Game::addEntity(std::shared_ptr<Entity> newEntity)
 {
+    if (!newEntity) { return; }
     entityCounter++;
     newEntity->setID(entityCounter);
     entities.push_back(newEntity);
@@ -222,6 +224,7 @@ void Game::update(float elapsed)
         bigArray(elapsed);
 
         for (auto& ent : entities) {
+            if (!ent) { continue; }
             ent->update(this, elapsed);
         }
     }
@@ -237,23 +240,25 @@ void Game::update(float elapsed)
     resolveTileCollisionsForPlayer(elapsed);
 
     // Collision handling for static entities.
-    Rectangle& playerBB = player->getBoundingBox();
-    for (auto& ent : entities) {
-        if (ent == player) continue;
-        Rectangle& eBB = ent->getBoundingBox();
-        if (playerBB.intersects(eBB)) {
-            auto it = collisionCallbacks.find(ent->getEntityType());
-            if (it != collisionCallbacks.end()) {                    
-                it->second(ent.get());                               
-            }                                                       
-            
+    if (player) {
+        Rectangle& playerBB = player->getBoundingBox();
+        for (auto& ent : entities) {
+            if (!ent || ent == player) continue;
+            Rectangle& eBB = ent->getBoundingBox();
+            if (playerBB.intersects(eBB)) {
+                auto it = collisionCallbacks.find(ent->getEntityType());
+                if (it != collisionCallbacks.end()) {                    
+                    it->second(ent.get());                               
+                }                                                       
+                
+            }
         }
     }
 
     // Remove deleted entities.
     entities.erase(
         std::remove_if(entities.begin(), entities.end(),
-            [](std::shared_ptr<Entity>& e) { return e->isDeleted(); }),
+            [](std::shared_ptr<Entity>& e) { return !e || e->isDeleted(); }),
         entities.end()
     );
 
@@ -262,7 +267,7 @@ void Game::update(float elapsed)
         // Count existing mushrooms
         int mushCount = 0;
         for (const auto& e : entities) {
-            if (e->getEntityType() == EntityType::MUSHROOM) mushCount++;
+            if (e && e->getEntityType() == EntityType::MUSHROOM) mushCount++;
         }
         spawnTimer += elapsed;
         if (mushCount < maxMushrooms && spawnTimer >= nextSpawnInterval) {
@@ -318,6 +323,7 @@ void Game::updateArchetypes(float elapsed) {
     // Iterate over each archetype
     for (auto& archetype : archetypes) {
         for (auto& entity : archetype.entities) {
+            if (!entity) { continue; }
             // Iterate through systems and update relevant entities
             for (auto& sys : systems) {
                 if (sys->validate(entity.get()))
@@ -331,6 +337,7 @@ void Game::updateArchetypes(float elapsed) {
 void Game::updatePackedArray(float elapsed) {
     for (auto& sys : systems) {
         for (auto& ent : packedEntities.getDense()) {
+            if (!ent) { continue; }
             if (sys->validate(ent.get())) {
                 sys->update(this, ent.get(), elapsed);
             }
