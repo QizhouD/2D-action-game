@@ -508,9 +508,31 @@ void Game::buildBoard(size_t width, size_t height)
 
 void Game::initWindow(size_t width, size_t height)
 {
-    int wdt = static_cast<int>(width * spriteWH * tileScale);
-    int hgt = static_cast<int>(height * spriteWH * tileScale);
-    window.setSize(sf::Vector2u(wdt, hgt));
+    // Compute desired window size from level grid and tile scaling
+    unsigned int desiredW = static_cast<unsigned int>(width * spriteWH * tileScale);
+    unsigned int desiredH = static_cast<unsigned int>(height * spriteWH * tileScale);
+
+    // Fit to desktop with proportional scaling (letterbox handled by Window)
+    auto dm = sf::VideoMode::getDesktopMode();
+    float maxW = dm.width * 0.95f;  // leave some margin for OS decorations/taskbar
+    float maxH = dm.height * 0.95f;
+
+    float scale = 1.f;
+    if (desiredW > maxW || desiredH > maxH) {
+        float sx = maxW / static_cast<float>(desiredW);
+        float sy = maxH / static_cast<float>(desiredH);
+        scale = std::min(sx, sy);
+    }
+
+    unsigned int fittedW = static_cast<unsigned int>(std::floor(desiredW * scale));
+    unsigned int fittedH = static_cast<unsigned int>(std::floor(desiredH * scale));
+    // Ensure a reasonable minimum size
+    fittedW = std::max(640u, fittedW);
+    fittedH = std::max(360u, fittedH);
+
+    // Set the logical view size so Window can keep aspect with letterbox
+    window.setLogicalSize(sf::Vector2u(desiredW, desiredH));
+    window.setSize(sf::Vector2u(fittedW, fittedH));
     window.redraw();
 }
 

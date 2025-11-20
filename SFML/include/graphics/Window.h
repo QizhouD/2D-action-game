@@ -28,12 +28,19 @@ public:
     void setup(const std::string& title, const sf::Vector2u& size);
     inline void setTitle(const std::string& t) { windowTitle = t; }
     inline void setSize(const sf::Vector2u& size) { windowSize = size; }
+    inline void setLogicalSize(const sf::Vector2u& size) { logicalViewSize = size; }
+
+    // Handle resize to keep aspect ratio (letterbox)
+    void onResized(unsigned int w, unsigned int h);
 
 private:
     const int fontSize = 50;
 
     void destroy();
     void create();
+
+    // Applies letterbox to keep view's aspect ratio inside the window
+    void applyLetterbox(unsigned int windowWidth, unsigned int windowHeight);
 
     sf::RenderWindow window;
     sf::Vector2u windowSize;
@@ -51,6 +58,10 @@ private:
 
     // Potion icons for health segments UI
     sf::Texture potionIconTexture;
+
+    // Main render view with a fixed logical size equal to windowSize (set by Game)
+    sf::View gameView;
+    sf::Vector2u logicalViewSize{0u, 0u};
 
     bool isDone;
     bool isFullscreen;

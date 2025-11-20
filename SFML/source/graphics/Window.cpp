@@ -6,6 +6,27 @@
 #include <algorithm>
 #include <cmath>
 
+namespace {
+static void applyLetterboxToView(sf::View& view, unsigned int windowWidth, unsigned int windowHeight)
+{
+    if (windowHeight == 0 || windowWidth == 0) return;
+    float windowRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+    float viewRatio   = view.getSize().x / view.getSize().y;
+
+    float sizeX = 1.f, sizeY = 1.f;
+    float posX  = 0.f, posY  = 0.f;
+
+    if (windowRatio > viewRatio) {
+        sizeX = viewRatio / windowRatio;
+        posX  = (1.f - sizeX) * 0.5f;
+    } else if (windowRatio < viewRatio) {
+        sizeY = windowRatio / viewRatio;
+        posY  = (1.f - sizeY) * 0.5f;
+    }
+    view.setViewport({ posX, posY, sizeX, sizeY });
+}
+}
+
 Window::Window()
     : windowTitle("")
     , windowSize({ 0, 0 })
@@ -75,14 +96,34 @@ void Window::setup(const std::string& title, const sf::Vector2u& size)
 void Window::create()
 {
     auto style = (isFullscreen ? sf::Style::Fullscreen : sf::Style::Default);
-    window.create({ windowSize.x, windowSize.y, 32 }, windowTitle, style);
-    pausedText.setPosition(windowSize.x * 0.5f - pausedText.getLocalBounds().width * 0.5f, 10.0f);
+
+    if (isFullscreen) {
+        auto dm = sf::VideoMode::getDesktopMode();
+        window.create(dm, windowTitle, style);
+    } else {
+        window.create({ windowSize.x, windowSize.y, 32 }, windowTitle, style);
+    }
+
+    // Initialize main view with logical size (fallback to current window size)
+    sf::Vector2u logical = logicalViewSize;
+    if (logical.x == 0u || logical.y == 0u) {
+        auto actual = window.getSize();
+        logical = { actual.x, actual.y };
+    }
+    gameView = sf::View(sf::FloatRect(0.f, 0.f, static_cast<float>(logical.x), static_cast<float>(logical.y)));
+    applyLetterboxToView(gameView, window.getSize().x, window.getSize().y);
+    window.setView(gameView);
+
+    // Place UI in logical coordinate space
+    float Lx = static_cast<float>(logical.x);
+    float Ly = static_cast<float>(logical.y);
+    pausedText.setPosition(Lx * 0.5f - pausedText.getLocalBounds().width * 0.5f, 10.0f);
 
     // Center menu texts
     sf::FloatRect titleBounds = menuTitleText.getLocalBounds();
-    menuTitleText.setPosition(windowSize.x * 0.5f - titleBounds.width * 0.5f, windowSize.y * 0.3f);
+    menuTitleText.setPosition(Lx * 0.5f - titleBounds.width * 0.5f, Ly * 0.3f);
     sf::FloatRect promptBounds = menuPromptText.getLocalBounds();
-    menuPromptText.setPosition(windowSize.x * 0.5f - promptBounds.width * 0.5f, windowSize.y * 0.5f);
+    menuPromptText.setPosition(Lx * 0.5f - promptBounds.width * 0.5f, Ly * 0.5f);
 }
 
 void Window::destroy()
@@ -98,6 +139,8 @@ void Window::update()
             isDone = true;
         else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5)
             toggleFullscreen();
+        else if (event.type == sf::Event::Resized)
+            onResized(event.size.width, event.size.height);
     }
 }
 
@@ -180,4 +223,17 @@ void Window::drawGUI(const Game& game)
 
 void Window::draw(sf::Drawable& drawable) {
     window.draw(drawable);
+}
+
+
+void Window::applyLetterbox(unsigned int windowWidth, unsigned int windowHeight)
+{
+    applyLetterboxToView(gameView, windowWidth, windowHeight);
+}
+
+void Window::onResized(unsigned int w, unsigned int h)
+{
+    windowSize = { w, h };
+    applyLetterbox(w, h);
+    window.setView(gameView);
 }
