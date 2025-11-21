@@ -17,13 +17,12 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="fix:Menu UI upgrade">
+    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat:Optimize Window Size for Full Display">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/core/Board.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Board.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/core/Game.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Game.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/core/Tile.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Tile.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/source/core/Board.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Board.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/core/Game.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Game.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/entities/Entity.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/entities/Entity.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,14 +53,6 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="mock://D:/Game-Engine/SFML/include/core/Game.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/include/core/Game.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/include/graphics/Window.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/source/core/Game.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/source/core/Game.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/source/graphics/Window.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/source/graphics/Window.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
@@ -123,7 +114,12 @@
       <workItem from="1762439254448" duration="382000" />
       <workItem from="1762439691769" duration="3248000" />
       <workItem from="1762953281181" duration="838000" />
-      <workItem from="1763276709600" duration="4294000" />
+      <workItem from="1763276709600" duration="5759000" />
+      <workItem from="1763302869477" duration="1837000" />
+      <workItem from="1763645218765" duration="679000" />
+      <workItem from="1763647417735" duration="3612000" />
+      <workItem from="1763723200818" duration="1851000" />
+      <workItem from="1763736791665" duration="1503000" />
     </task>
     <task id="LOCAL-00001" summary="Delete unused file">
       <option name="closed" value="true" />
@@ -157,7 +153,39 @@
       <option name="project" value="LOCAL" />
       <updated>1762442940424</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="feat：adding terain collision">
+      <option name="closed" value="true" />
+      <created>1763281662990</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1763281662990</updated>
+    </task>
+    <task id="LOCAL-00006" summary="fix：avoid enemy spawning inside solid terrain">
+      <option name="closed" value="true" />
+      <created>1763306038549</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1763306038549</updated>
+    </task>
+    <task id="LOCAL-00007" summary="fix：resolve null pointer">
+      <option name="closed" value="true" />
+      <created>1763649043983</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1763649043983</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat:Optimize Window Size for Full Display">
+      <option name="closed" value="true" />
+      <created>1763651087658</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1763651087658</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -178,6 +206,10 @@
     <MESSAGE value="Delete unused file" />
     <MESSAGE value="feat:Adding a main menu, Random enemy spawning，player UI with health bar(unfinished)" />
     <MESSAGE value="fix:Menu UI upgrade" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix:Menu UI upgrade" />
+    <MESSAGE value="feat：adding terain collision" />
+    <MESSAGE value="fix：avoid enemy spawning inside solid terrain" />
+    <MESSAGE value="fix：resolve null pointer" />
+    <MESSAGE value="feat:Optimize Window Size for Full Display" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat:Optimize Window Size for Full Display" />
   </component>
 </project>

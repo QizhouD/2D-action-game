@@ -221,20 +221,20 @@ void Game::update(float elapsed)
     }
 
     if (!paused) {
-        bigArray(elapsed);
+        // Run ECS systems exactly once per frame based on the selected ECS type.
+        if (ecsType == ECSType::ARCHETYPES)
+            updateArchetypes(elapsed);  // Use Archetypes ECS
+        else if (ecsType == ECSType::PACKED_ARRAY)
+            updatePackedArray(elapsed); // Packed ECS update
+        else
+            bigArray(elapsed);          // Use Big Array ECS (existing)
 
+        // Then allow each entity to run its own update (AI, animation, spawning, etc.).
         for (auto& ent : entities) {
             if (!ent) { continue; }
             ent->update(this, elapsed);
         }
     }
-
-    if (ecsType == ECSType::ARCHETYPES)
-        updateArchetypes(elapsed);  // Use Archetypes ECS
-    else if (ecsType == ECSType::PACKED_ARRAY)
-        updatePackedArray(elapsed); // Packed ECS update
-    else
-        bigArray(elapsed);          // Use Big Array ECS (existing)
 
     // Resolve tile collisions for the player (terrain vs player)
     resolveTileCollisionsForPlayer(elapsed);

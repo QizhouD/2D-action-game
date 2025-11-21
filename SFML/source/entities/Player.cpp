@@ -52,10 +52,7 @@ std::shared_ptr<Observer> Player::getObserver() const {
 }
 
 void Player::update(Game* game, float elapsed) {
-    // Update the player's position via the VelocityComponent.
-    if (velocity) {
-        velocity->update(*getPositionComp(), elapsed);
-    }
+    // Movement is handled by MovementSystem; do not update position here to avoid double movement.
 
     // Update animations based on current movement.
     sf::Vector2f vel = velocity->getVelocity();

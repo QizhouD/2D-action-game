@@ -19,12 +19,16 @@ Entity::Entity()
 {
     // Initialize the position component.
     positionComp = std::make_shared<PositionComponent>();
+    // Register the position component so systems (e.g., Movement) validate this entity
+    addComponent(positionComp);
 }
 
 Entity::Entity(EntityType et)
     : type(et), id(0), isSpriteSheet(false), deleted(false)
 {
     positionComp = std::make_shared<PositionComponent>();
+    // Register the position component so systems (e.g., Movement) validate this entity
+    addComponent(positionComp);
 }
 
 Entity::~Entity() {}

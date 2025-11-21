@@ -10,10 +10,14 @@
 #include <iostream>
 
 GameplaySystem::GameplaySystem() {
-    // Optional: If required, set a component mask.
+    // Run for all world entities that have a position (i.e., nearly all entities)
+    componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::POSITION));
 }
 
-void GameplaySystem::update(Game* game, Entity* entity, float) {
+void GameplaySystem::update(Game* game, Entity* entity, float elapsed) {
+    static float mushDamageCooldown = 0.f;
+    // Tick cooldown timer
+    if (mushDamageCooldown > 0.f) mushDamageCooldown -= elapsed;
     if (entity->getEntityType() == EntityType::PLAYER)
         return;
 
@@ -45,18 +49,27 @@ void GameplaySystem::update(Game* game, Entity* entity, float) {
         }
         case EntityType::LOG:
         {
-            Log* logEntity = dynamic_cast<Log*>(entity);
-            if (logEntity && player->isAttacking()) {
-                int woodCollected = logEntity->getWood();
-                player->addWood(woodCollected);
-                entity->deleteEntity();
-            }
+            // Defer log collection to Player::handleLogCollision via Game::collisionCallbacks.
+            // That handler enforces the attack animation's action window, preventing premature deletion.
             break;
         }
         case EntityType::MUSHROOM:
         {
-            // Damage player on contact
-            player->getHealthComp()->changeHealth(-1);
+            // Damage player on contact with cooldown to reduce DPS
+            const float mushHitInterval = 0.5f; // seconds between contact damage ticks
+            if (mushDamageCooldown <= 0.f) {
+                player->getHealthComp()->changeHealth(-1);
+                mushDamageCooldown = mushHitInterval;
+            }
+            
+            // Player melee attack damages mushrooms
+            Mushroom* mush = dynamic_cast<Mushroom*>(entity);
+            if (mush && player->isAttacking()) {
+                mush->getHealthComp()->changeHealth(-10);
+                if (mush->getHealthComp()->getHealth() <= 0) {
+                    entity->deleteEntity();
+                }
+            }
             break;
         }
         default:
@@ -72,7 +85,7 @@ void GameplaySystem::update(Game* game, Entity* entity, float) {
                 if (e->getEntityType() == EntityType::FIRE) {
                     if (e->getBoundingBox().intersects(entity->getBoundingBox())) {
                         // Damage mushroom and remove fire
-                        mush->getHealthComp()->changeHealth(-10);
+                        mush->getHealthComp()->changeHealth(-15);
                         e->deleteEntity();
                         if (mush->getHealthComp()->getHealth() <= 0) {
                             entity->deleteEntity();
