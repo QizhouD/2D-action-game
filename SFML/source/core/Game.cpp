@@ -142,7 +142,7 @@ void Game::parseLevelLines(const std::vector<std::string>& lines)
                 }
                 case 'g':
                 {
-                    auto goal = buildEntityAt<Goal>("img/potion.png", col, row);
+                    auto goal = buildEntityAt<Goal>("img/checkpoint.png", col, row);
                     addEntity(goal);
                     board->addTile(col, row, tileScale, TileType::CORRIDOR, "img/floor.png");
                     break;
