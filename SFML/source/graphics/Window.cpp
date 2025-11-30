@@ -176,55 +176,112 @@ void Window::drawGUI(const Game& game)
 
     // Settlement/Result overlay has priority
     if (game.isInResult()) {
-        // Darken background
+        // Softer background dim
         sf::RectangleShape overlay;
         overlay.setSize(sf::Vector2f(static_cast<float>(logicalViewSize.x), static_cast<float>(logicalViewSize.y)));
-        overlay.setFillColor(sf::Color(0, 0, 0, 160));
+        overlay.setFillColor(sf::Color(0, 0, 0, 140));
         window.draw(overlay);
+
+        // Themed panel with subtle shadow (forest/dwarf vibes)
+        float pw = std::min(720.f, static_cast<float>(logicalViewSize.x) * 0.78f);
+        float ph = 360.f;
+        float px = (logicalViewSize.x - pw) * 0.5f;
+        float py = (logicalViewSize.y - ph) * 0.5f;
+
+        // Shadow
+        sf::RectangleShape shadow;
+        shadow.setSize({ pw, ph });
+        shadow.setFillColor(sf::Color(0, 0, 0, 100));
+        shadow.setPosition(px + 6.f, py + 6.f);
+        window.draw(shadow);
 
         // Panel
         sf::RectangleShape panel;
-        float pw = std::min(600.f, static_cast<float>(logicalViewSize.x) * 0.8f);
-        float ph = 300.f;
         panel.setSize({ pw, ph });
-        panel.setFillColor(sf::Color(30, 30, 30, 230));
-        panel.setOutlineThickness(4.f);
-        panel.setOutlineColor(sf::Color::White);
-        panel.setPosition((logicalViewSize.x - pw) * 0.5f, (logicalViewSize.y - ph) * 0.5f);
+        panel.setFillColor(sf::Color(22, 24, 28, 230));
+        panel.setOutlineThickness(0.f);
+        panel.setPosition(px, py);
         window.draw(panel);
 
-        // Text lines
-        sf::Text title("Win", guiFont, 60);
-        title.setFillColor(sf::Color::Yellow);
-        title.setPosition(panel.getPosition().x + (pw - title.getLocalBounds().width) * 0.5f, panel.getPosition().y + 15.f);
+        // Load small icons once (cache)
+        static sf::Texture trophyTex; static bool trophyLoaded = false;
+        static sf::Texture mushTex; static bool mushLoaded = false;
+        static sf::Texture fireTex; static bool fireLoaded = false;
+        if (!trophyLoaded) { trophyLoaded = trophyTex.loadFromFile("img/checkpoint.png"); }
+        if (!mushLoaded)   { mushLoaded   = mushTex.loadFromFile("img/mushroom50-50.png"); }
+        if (!fireLoaded)   { fireLoaded   = fireTex.loadFromFile("img/fire.png"); }
+
+        // Title with soft shadow
+        sf::Text title("Victory!", guiFont, 64);
+        title.setFillColor(sf::Color(245, 245, 245));
+        sf::Text titleShadow = title; titleShadow.setFillColor(sf::Color(0, 0, 0, 120));
+        // center
+        float titleX = px + (pw - title.getLocalBounds().width) * 0.5f;
+        float titleY = py + 22.f;
+        titleShadow.setPosition(titleX + 2.f, titleY + 2.f);
+        title.setPosition(titleX, titleY);
+
+        // Optional emblem left of title
+        if (trophyLoaded) {
+            sf::Sprite emblem(trophyTex);
+            float eScale = 0.9f;
+            emblem.setScale(eScale, eScale);
+            float eY = titleY - 8.f;
+            float eX = titleX - 56.f; // slightly left to title
+            emblem.setPosition(eX, eY);
+            window.draw(emblem);
+        }
+        window.draw(titleShadow);
         window.draw(title);
 
-        std::ostringstream tss;
-        tss.setf(std::ios::fixed); tss.precision(2);
-        tss << "Time: " << game.getLevelFinishSeconds() << " s";
-        sf::Text timeText(tss.str(), guiFont, 36);
-        timeText.setFillColor(sf::Color::White);
-        timeText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 100.f);
-        window.draw(timeText);
+        // Subtitle
+        sf::Text subtitle("Level complete", guiFont, 28);
+        subtitle.setFillColor(sf::Color(200, 210, 210));
+        subtitle.setPosition(px + (pw - subtitle.getLocalBounds().width) * 0.5f, titleY + 56.f);
+        window.draw(subtitle);
 
-        std::ostringstream kss;
-        kss << "Kills: " << game.getKillCount();
-        sf::Text killText(kss.str(), guiFont, 36);
-        killText.setFillColor(sf::Color::White);
-        killText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 150.f);
-        window.draw(killText);
+        // Stats with icons
+        float left = px + 36.f;
+        float rowY = py + 120.f;
+        float lineH = 46.f;
+        auto drawStat = [&](const std::string& label, const std::string& value, const sf::Texture* icon){
+            // icon
+            float iconW = 36.f, iconH = 36.f;
+            float textX = left + (icon ? (iconW + 14.f) : 0.f);
+            if (icon && icon->getSize().x > 0) {
+                sf::Sprite s(*icon);
+                float scaleX = iconW / static_cast<float>(icon->getSize().x);
+                float scaleY = iconH / static_cast<float>(icon->getSize().y);
+                s.setScale(scaleX, scaleY);
+                s.setPosition(left, rowY - 4.f);
+                window.draw(s);
+            }
+            // label/value
+            sf::Text line(label + ": " + value, guiFont, 34);
+            line.setFillColor(sf::Color(230, 230, 230));
+            sf::Text lineShadow = line; lineShadow.setFillColor(sf::Color(0, 0, 0, 120));
+            lineShadow.setPosition(textX + 2.f, rowY + 2.f);
+            line.setPosition(textX, rowY);
+            window.draw(lineShadow);
+            window.draw(line);
+            rowY += lineH;
+        };
 
-        std::ostringstream fss;
-        fss << "Fire Counts: " << game.getFireShotCount();
-        sf::Text fireText(fss.str(), guiFont, 36);
-        fireText.setFillColor(sf::Color::White);
-        fireText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 200.f);
-        window.draw(fireText);
+        // Format time to 2 decimals
+        std::ostringstream tss; tss.setf(std::ios::fixed); tss.precision(2);
+        tss << game.getLevelFinishSeconds() << " s";
+        drawStat("Time", tss.str(), trophyLoaded ? &trophyTex : nullptr);
+
+        std::ostringstream kss; kss << game.getKillCount();
+        drawStat("Kills", kss.str(), mushLoaded ? &mushTex : nullptr);
+
+        std::ostringstream fss; fss << game.getFireShotCount();
+        drawStat("Fire shots", fss.str(), fireLoaded ? &fireTex : nullptr);
 
         // Hint line for navigation
-        sf::Text hint("Press Enter to return to Menu  |  Press R to Restart", guiFont, 28);
-        hint.setFillColor(sf::Color(200, 200, 200));
-        hint.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + ph - 50.f);
+        sf::Text hint("Press Enter to return to Menu  |  Press R to Restart", guiFont, 24);
+        hint.setFillColor(sf::Color(190, 190, 190));
+        hint.setPosition(px + (pw - hint.getLocalBounds().width) * 0.5f, py + ph - 40.f);
         window.draw(hint);
 
         return; // don't draw regular HUD
