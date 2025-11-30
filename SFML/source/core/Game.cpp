@@ -210,6 +210,13 @@ void Game::handleInput()
 
     // 1) Main menu: Enter to start the game
     if (isInMenu()) {
+        // Debounce Enter if we just returned from Result
+        if (ignoreMenuEnterUntilRelease) {
+            if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
+                ignoreMenuEnterUntilRelease = false;
+            }
+            return; // wait for key release before allowing a new start
+        }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
             startGame();
         }
@@ -219,10 +226,11 @@ void Game::handleInput()
     // 2) Settlement/Result: Enter to return to menu; R to restart current level
     if (isInResult()) {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
-            // Re-initialize game world and preload lvl0, then go back to Menu
+            // Return to Menu: preload lvl0 so menu sits over a ready world, and debounce Enter
             paused = false;
             loadLevelByIndex(0);      // This sets Playing; we will switch to Menu next
             gameState = GameState::Menu;
+            ignoreMenuEnterUntilRelease = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
             paused = false;

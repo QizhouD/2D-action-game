@@ -139,4 +139,7 @@ private:
     int killCount = 0;
     int fireShotCount = 0;
     float levelFinishSeconds = 0.f;
+
+    // Input debounce: prevent immediate game start when returning to Menu from Result
+    bool ignoreMenuEnterUntilRelease = false;
 };
