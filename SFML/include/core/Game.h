@@ -27,7 +27,7 @@ public:
     Bitmask componentMask;                         // Bitmask representing common components
 };
 
-enum class GameState { Menu, Playing };
+enum class GameState { Menu, Playing, Result };
 
 class Game {
 public:
@@ -63,10 +63,20 @@ public:
     const std::vector<std::shared_ptr<Entity>>& getEntities() const { return entities; }
 
     bool isInMenu() const { return gameState == GameState::Menu; }
+    bool isInResult() const { return gameState == GameState::Result; }
     void startGame() { gameState = GameState::Playing; }
 
     bool loadNextLevel();
     bool loadLevelByIndex(int index);
+    int getCurrentLevelIndex() const { return currentLevelIndex; }
+
+    // Stats and result handling
+    void incrementFireShots() { fireShotCount++; }
+    void incrementKills() { killCount++; }
+    int getFireShotCount() const { return fireShotCount; }
+    int getKillCount() const { return killCount; }
+    float getLevelFinishSeconds() const { return levelFinishSeconds; }
+    void triggerSettlement();
 
     template <typename T>
     std::shared_ptr<T> buildEntityAt(const std::string& filename, int col, int row)
@@ -119,4 +129,10 @@ private:
     float spawnIntervalMin = 2.0f;
     float spawnIntervalMax = 5.0f;
     int maxMushrooms = 8;
+
+    // Settlement/Stats
+    sf::Clock levelClock;
+    int killCount = 0;
+    int fireShotCount = 0;
+    float levelFinishSeconds = 0.f;
 };

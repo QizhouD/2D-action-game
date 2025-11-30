@@ -19,8 +19,11 @@
   <component name="ChangeListManager">
     <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat: complete battle system">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/levels/lvl0.txt" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/levels/lvl0.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/core/Game.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Game.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/core/Game.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Game.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +54,8 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="mock://D:/Game-Engine/SFML/source/entities/Player.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://D:/Game-Engine/SFML/source/systems/GameplaySystem.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{

@@ -174,6 +174,56 @@ void Window::drawGUI(const Game& game)
         return;
     }
 
+    // Settlement/Result overlay has priority
+    if (game.isInResult()) {
+        // Darken background
+        sf::RectangleShape overlay;
+        overlay.setSize(sf::Vector2f(static_cast<float>(logicalViewSize.x), static_cast<float>(logicalViewSize.y)));
+        overlay.setFillColor(sf::Color(0, 0, 0, 160));
+        window.draw(overlay);
+
+        // Panel
+        sf::RectangleShape panel;
+        float pw = std::min(600.f, static_cast<float>(logicalViewSize.x) * 0.8f);
+        float ph = 300.f;
+        panel.setSize({ pw, ph });
+        panel.setFillColor(sf::Color(30, 30, 30, 230));
+        panel.setOutlineThickness(4.f);
+        panel.setOutlineColor(sf::Color::White);
+        panel.setPosition((logicalViewSize.x - pw) * 0.5f, (logicalViewSize.y - ph) * 0.5f);
+        window.draw(panel);
+
+        // Text lines
+        sf::Text title("Win", guiFont, 60);
+        title.setFillColor(sf::Color::Yellow);
+        title.setPosition(panel.getPosition().x + (pw - title.getLocalBounds().width) * 0.5f, panel.getPosition().y + 15.f);
+        window.draw(title);
+
+        std::ostringstream tss;
+        tss.setf(std::ios::fixed); tss.precision(2);
+        tss << "Time: " << game.getLevelFinishSeconds() << " s";
+        sf::Text timeText(tss.str(), guiFont, 36);
+        timeText.setFillColor(sf::Color::White);
+        timeText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 100.f);
+        window.draw(timeText);
+
+        std::ostringstream kss;
+        kss << "Kills: " << game.getKillCount();
+        sf::Text killText(kss.str(), guiFont, 36);
+        killText.setFillColor(sf::Color::White);
+        killText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 150.f);
+        window.draw(killText);
+
+        std::ostringstream fss;
+        fss << "Fire Counts: " << game.getFireShotCount();
+        sf::Text fireText(fss.str(), guiFont, 36);
+        fireText.setFillColor(sf::Color::White);
+        fireText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 200.f);
+        window.draw(fireText);
+
+        return; // don't draw regular HUD
+    }
+
     window.draw(fpsText);
     if (game.getPlayer()) {
         auto playerHealth = game.getPlayer()->getHealthComp()->getHealth();

@@ -95,6 +95,7 @@ void Player::update(Game* game, float elapsed) {
         wood >= static_cast<int>(shootingCost) && shootCooldown <= 0) {
         auto fire = createFire();
         game->addEntity(fire);
+        game->incrementFireShots();
         ServiceLocator::getAudio()->playSound("fire");
         wood -= static_cast<int>(shootingCost);
         shootCooldown = shootCooldownTime;

@@ -67,6 +67,7 @@ void GameplaySystem::update(Game* game, Entity* entity, float elapsed) {
             if (mush && player->isAttacking()) {
                 mush->getHealthComp()->changeHealth(-10);
                 if (mush->getHealthComp()->getHealth() <= 0) {
+                    game->incrementKills();
                     entity->deleteEntity();
                 }
             }
@@ -88,6 +89,7 @@ void GameplaySystem::update(Game* game, Entity* entity, float elapsed) {
                         mush->getHealthComp()->changeHealth(-15);
                         e->deleteEntity();
                         if (mush->getHealthComp()->getHealth() <= 0) {
+                            game->incrementKills();
                             entity->deleteEntity();
                         }
                         break; // handle one fire per frame
@@ -97,10 +99,14 @@ void GameplaySystem::update(Game* game, Entity* entity, float elapsed) {
         }
     }
 
-    // Player reached goal -> load next level
+    // Player reached goal -> either show settlement (lvl2) or load next level
     if (entity->getEntityType() == EntityType::GOAL) {
         if (playerBB.intersects(entityBB)) {
-            game->loadNextLevel();
+            if (game->getCurrentLevelIndex() == 2) {
+                game->triggerSettlement();
+            } else {
+                game->loadNextLevel();
+            }
         }
     }
 }

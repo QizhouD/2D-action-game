@@ -450,6 +450,14 @@ void Game::render(float elapsed)
     window.endDraw();
 }
 
+void Game::triggerSettlement()
+{
+    // Called when reaching goal in level 2
+    levelFinishSeconds = levelClock.getElapsedTime().asSeconds();
+    paused = true;
+    gameState = GameState::Result;
+}
+
 bool Game::loadLevelByIndex(int index)
 {
     std::ostringstream ss; ss << "levels/lvl" << index << ".txt";
@@ -482,6 +490,12 @@ bool Game::loadLevelByIndex(int index)
 
     // ensure we are in playing state
     gameState = GameState::Playing;
+    paused = false;
+    // reset stats for new level
+    killCount = 0;
+    fireShotCount = 0;
+    levelFinishSeconds = 0.f;
+    levelClock.restart();
     return true;
 }
 
