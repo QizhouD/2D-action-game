@@ -83,6 +83,7 @@ void GameplaySystem::update(Game* game, Entity* entity, float elapsed) {
         Mushroom* mush = dynamic_cast<Mushroom*>(entity);
         if (mush) {
             for (const auto& e : game->getEntities()) {
+                if (!e || e->isDeleted()) { continue; }
                 if (e->getEntityType() == EntityType::FIRE) {
                     if (e->getBoundingBox().intersects(entity->getBoundingBox())) {
                         // Damage mushroom and remove fire

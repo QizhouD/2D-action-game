@@ -158,8 +158,8 @@ void Game::parseLevelLines(const std::vector<std::string>& lines)
 
 void Game::init(std::vector<std::string> lines)
 {
-    window.loadFont("font/AmaticSC-Regular.ttf");
-    window.setTitle("Mini-Game");
+    window.loadFont("font/NatureBeautyPersonalUse-9Y2DK.ttf");
+    window.setTitle("Game");
 
     // INIT AUDIO MANAGER and REGISTER SERVICE LOCATOR
     auto audio = std::make_shared<AudioManager>();
@@ -181,6 +181,13 @@ void Game::addEntity(std::shared_ptr<Entity> newEntity)
     if (!newEntity) { return; }
     entityCounter++;
     newEntity->setID(entityCounter);
+
+    // If we're in the middle of update loops, defer insertion to avoid iterator invalidation
+    if (inUpdate) {
+        pendingEntities.push_back(newEntity);
+        return;
+    }
+
     entities.push_back(newEntity);
 
     // Add entity to corresponding archetypes if using Archetypes ECS
@@ -198,15 +205,42 @@ void Game::addEntity(std::shared_ptr<Entity> newEntity)
 
 void Game::handleInput()
 {
-    // If we are in the main menu, pressing Enter will start the game
+    // Always process window events first
+    window.update();
+
+    // 1) Main menu: Enter to start the game
     if (isInMenu()) {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
             startGame();
         }
-        window.update();
-        return;
+        return; // Do not process gameplay input in menu
     }
 
+    // 2) Settlement/Result: Enter to return to menu; R to restart current level
+    if (isInResult()) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
+            // Re-initialize game world and preload lvl0, then go back to Menu
+            paused = false;
+            loadLevelByIndex(0);      // This sets Playing; we will switch to Menu next
+            gameState = GameState::Menu;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
+            paused = false;
+            loadLevelByIndex(getCurrentLevelIndex());
+        }
+        return; // Do not process gameplay input on result screen
+    }
+
+    // 3) Paused: allow only unpause/system keys
+    if (paused) {
+        // Unpause on P or Escape
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::P) || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+            paused = false;
+        }
+        return; // Block movement/shoot/shoot etc. while paused
+    }
+
+    // 4) Normal gameplay input
     auto cmd = inputHandler->handleInput();
     if (cmd) { cmd->execute(*this); }
     if (player) { player->handleInput(*this); }
@@ -219,6 +253,9 @@ void Game::update(float elapsed)
         window.update();
         return;
     }
+
+    // Mark that we are in update to defer entity additions safely
+    inUpdate = true;
 
     if (!paused) {
         // Run ECS systems exactly once per frame based on the selected ECS type.
@@ -236,21 +273,40 @@ void Game::update(float elapsed)
         }
     }
 
-    // Resolve tile collisions for the player (terrain vs player)
-    resolveTileCollisionsForPlayer(elapsed);
+    // Done with update loops; flush any pending entities
+    inUpdate = false;
+    if (!pendingEntities.empty()) {
+        for (auto& ne : pendingEntities) {
+            if (!ne) continue;
+            entities.push_back(ne);
+            if (ecsType == ECSType::ARCHETYPES) {
+                for (auto& archetype : archetypes) {
+                    if (ne->hasComponent(archetype.componentMask)) {
+                        archetype.entities.push_back(ne);
+                    }
+                }
+            } else if (ecsType == ECSType::PACKED_ARRAY) {
+                packedEntities.insert(ne->getID(), ne);
+            }
+        }
+        pendingEntities.clear();
+    }
 
-    // Collision handling for static entities.
-    if (player) {
-        Rectangle& playerBB = player->getBoundingBox();
-        for (auto& ent : entities) {
-            if (!ent || ent == player) continue;
-            Rectangle& eBB = ent->getBoundingBox();
-            if (playerBB.intersects(eBB)) {
-                auto it = collisionCallbacks.find(ent->getEntityType());
-                if (it != collisionCallbacks.end()) {                    
-                    it->second(ent.get());                               
-                }                                                       
-                
+    // Resolve tile collisions and handle player-entity collisions unless we're on the Result screen
+    if (!isInResult()) {
+        resolveTileCollisionsForPlayer(elapsed);
+
+        if (player) {
+            Rectangle& playerBB = player->getBoundingBox();
+            for (auto& ent : entities) {
+                if (!ent || ent == player) continue;
+                Rectangle& eBB = ent->getBoundingBox();
+                if (playerBB.intersects(eBB)) {
+                    auto it = collisionCallbacks.find(ent->getEntityType());
+                    if (it != collisionCallbacks.end()) {
+                        it->second(ent.get());
+                    }
+                }
             }
         }
     }
@@ -454,6 +510,13 @@ void Game::triggerSettlement()
 {
     // Called when reaching goal in level 2
     levelFinishSeconds = levelClock.getElapsedTime().asSeconds();
+
+    // Stop player movement immediately to prevent drifting on result screen
+    if (player) {
+        auto velComp = player->getVelocityComp();
+        if (velComp) { velComp->setVelocity(0.f, 0.f); }
+    }
+
     paused = true;
     gameState = GameState::Result;
 }

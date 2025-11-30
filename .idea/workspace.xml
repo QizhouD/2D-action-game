@@ -17,11 +17,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat: complete battle system">
+    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat: add a result menu">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/include/core/Game.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Game.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/core/Game.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Game.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/entities/Player.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/graphics/Window.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/systems/GameplaySystem.cpp" afterDir="false" />
     </list>
@@ -130,6 +129,7 @@
       <workItem from="1764418841003" duration="599000" />
       <workItem from="1764432945985" duration="595000" />
       <workItem from="1764491005711" duration="1823000" />
+      <workItem from="1764508853893" duration="3447000" />
     </task>
     <task id="LOCAL-00001" summary="Delete unused file">
       <option name="closed" value="true" />
@@ -203,7 +203,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763738728971</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="feat: add a result menu">
+      <option name="closed" value="true" />
+      <created>1764497414331</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1764497414331</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -229,6 +237,7 @@
     <MESSAGE value="fix：resolve null pointer" />
     <MESSAGE value="feat:Optimize Window Size for Full Display" />
     <MESSAGE value="feat: complete battle system" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: complete battle system" />
+    <MESSAGE value="feat: add a result menu" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add a result menu" />
   </component>
 </project>

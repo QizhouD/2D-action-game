@@ -130,6 +130,10 @@ private:
     float spawnIntervalMax = 5.0f;
     int maxMushrooms = 8;
 
+    // Update management
+    bool inUpdate = false;
+    std::vector<std::shared_ptr<Entity>> pendingEntities;
+
     // Settlement/Stats
     sf::Clock levelClock;
     int killCount = 0;

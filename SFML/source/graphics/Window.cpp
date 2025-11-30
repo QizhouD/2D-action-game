@@ -221,6 +221,12 @@ void Window::drawGUI(const Game& game)
         fireText.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + 200.f);
         window.draw(fireText);
 
+        // Hint line for navigation
+        sf::Text hint("Press Enter to return to Menu  |  Press R to Restart", guiFont, 28);
+        hint.setFillColor(sf::Color(200, 200, 200));
+        hint.setPosition(panel.getPosition().x + 30.f, panel.getPosition().y + ph - 50.f);
+        window.draw(hint);
+
         return; // don't draw regular HUD
     }
 
