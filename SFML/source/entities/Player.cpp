@@ -31,6 +31,9 @@ Player::Player()
     // Create the HealthComponent using startingHealth and maxHealth.
     healthComp = std::make_shared<HealthComponent>(startingHealth, maxHealth);
     addComponent(healthComp);
+
+    // Default aim to right so player can shoot immediately without moving.
+    lastAimDir = sf::Vector2f(1.f, 0.f);
 }
 
 Player::~Player() {}
@@ -82,6 +85,21 @@ void Player::update(Game* game, float elapsed) {
         else {
             spriteSheet.setAnimation("Idle", true, true);
         }
+    }
+
+    // Update persistent aim direction based on current movement input.
+    // Prioritize vertical when there is vertical movement, else horizontal; if no movement, keep lastAimDir.
+    if (vel.y < 0.f) {
+        lastAimDir = sf::Vector2f(0.f, -1.f);
+    }
+    else if (vel.y > 0.f) {
+        lastAimDir = sf::Vector2f(0.f, 1.f);
+    }
+    else if (vel.x < 0.f) {
+        lastAimDir = sf::Vector2f(-1.f, 0.f);
+    }
+    else if (vel.x > 0.f) {
+        lastAimDir = sf::Vector2f(1.f, 0.f);
     }
 
     // Decrement shoot cooldown.
@@ -146,13 +164,19 @@ std::shared_ptr<Fire> Player::createFire() const {
     pos.y += getTextureSize().y * 0.5f;
     fireEntity->init("img/fire.png", 1.f);
     fireEntity->setPosition(pos.x, pos.y);
-    // Set fire velocity based on player's facing direction.
+    // Set fire velocity based on player's current input direction.
+    // Prefer vertical shooting when pressing Up/Down; otherwise use facing Left/Right.
     auto fireVel = fireEntity->getVelocityComp();
     if (fireVel) {
-        if (spriteSheet.getSpriteDirection() == Direction::Left)
-            fireVel->setVelocity(-fireSpeed, 0.f);
-        else
-            fireVel->setVelocity(fireSpeed, 0.f);
+        // Use persisted lastAimDir so player doesn't need to hold the key.
+        sf::Vector2f dir = lastAimDir;
+        if (dir.x == 0.f && dir.y == 0.f) {
+            // Fallback to facing direction (shouldn't happen since we initialize and maintain lastAimDir)
+            dir = (spriteSheet.getSpriteDirection() == Direction::Left)
+                ? sf::Vector2f(-1.f, 0.f)
+                : sf::Vector2f(1.f, 0.f);
+        }
+        fireVel->setVelocity(dir.x * fireSpeed, dir.y * fireSpeed);
     }
     return fireEntity;
 }

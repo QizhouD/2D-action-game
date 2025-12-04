@@ -3,6 +3,7 @@
 #include "../../include/components/HealthComponent.h"
 #include "../../include/components/VelocityComponent.h"
 #include <memory>
+#include <SFML/System/Vector2.hpp>
 #include "../../include/utils/Observer.h"
 
 class InputComponent;
@@ -63,5 +64,8 @@ private:
     float shootCooldown;
     std::shared_ptr<InputComponent> input;
     std::shared_ptr<VelocityComponent> velocity;
+
+    // Persisted aim direction; normalized to axis-aligned unit vectors: (±1,0) or (0,±1)
+    sf::Vector2f lastAimDir;
 
 };
