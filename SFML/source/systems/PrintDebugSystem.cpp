@@ -25,5 +25,7 @@ void PrintDebugSystem::update(Game* game, Entity* entity, float ) {
     auto& debugRect = boundingBox.getDrawableRect();
 
     // Draw the debug rectangle on the window.
-    game->getWindow()->draw(debugRect);
+    if (game->getWindow()->isDebugBoundsVisible()) {
+        game->getWindow()->draw(debugRect);
+    }
 }

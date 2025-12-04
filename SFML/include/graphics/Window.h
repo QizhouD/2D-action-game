@@ -33,6 +33,10 @@ public:
     // Handle resize to keep aspect ratio (letterbox)
     void onResized(unsigned int w, unsigned int h);
 
+    // Debug draw toggle for green bounding boxes
+    inline bool isDebugBoundsVisible() const { return showDebugBounds; }
+    inline void toggleDebugBounds() { showDebugBounds = !showDebugBounds; }
+
 private:
     const int fontSize = 50;
 
@@ -65,4 +69,7 @@ private:
 
     bool isDone;
     bool isFullscreen;
+
+    // Controls whether green debug rectangles are drawn
+    bool showDebugBounds = true;
 };

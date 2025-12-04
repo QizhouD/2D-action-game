@@ -79,3 +79,9 @@ void ShoutCommand::execute(Game& game)
         player->setShouting(true);
     }
 }
+
+void ToggleDebugBoundsCommand::execute(Game& game)
+{
+    auto* win = game.getWindow();
+    if (win) { win->toggleDebugBounds(); }
+}

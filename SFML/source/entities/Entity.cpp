@@ -73,7 +73,9 @@ void Entity::draw(Window* window) {
         window->draw(spriteSheet.getSprite());
     else
         window->draw(sprite);
-    window->draw(boundingBox.getDrawableRect());
+    if (window->isDebugBoundsVisible()) {
+        window->draw(boundingBox.getDrawableRect());
+    }
 }
 
 void Entity::setPosition(float x, float y) {

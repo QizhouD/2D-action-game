@@ -14,6 +14,7 @@ public:
 
 private:
     std::shared_ptr<Command> pauseCommand;
+    std::shared_ptr<Command> toggleDebugCommand;
 };
 
 enum class InputMode { WASD, ARROWS };

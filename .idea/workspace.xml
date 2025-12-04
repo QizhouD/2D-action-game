@@ -17,10 +17,16 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat: new font">
+    <list default="true" id="baec760a-6226-4e0a-a563-22b74e4da3eb" name="Changes" comment="feat:A new persistent aim direction variable was added and updated based on player velocity">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/include/core/Game.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Game.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SFML/source/core/Game.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/Game.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/components/ColliderComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/components/ColliderComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/core/Command.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/Command.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/core/InputHandler.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/core/InputHandler.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/include/graphics/Window.h" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/include/graphics/Window.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/core/GameCommand.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/GameCommand.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/core/InputHandler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/core/InputHandler.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/entities/Entity.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/entities/Entity.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SFML/source/systems/PrintDebugSystem.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SFML/source/systems/PrintDebugSystem.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,6 +58,9 @@
 }</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="mock://D:/Game-Engine/SFML/include/core/Game.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/include/entities/Player.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/entities/Mushroom.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/Game-Engine/SFML/source/entities/Player.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
@@ -223,7 +232,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764515626680</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="feat:A new persistent aim direction variable was added and updated based on player velocity">
+      <option name="closed" value="true" />
+      <created>1764866491173</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1764866491173</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -252,6 +269,7 @@
     <MESSAGE value="feat: add a result menu" />
     <MESSAGE value="fix: result menu" />
     <MESSAGE value="feat: new font" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: new font" />
+    <MESSAGE value="feat:A new persistent aim direction variable was added and updated based on player velocity" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat:A new persistent aim direction variable was added and updated based on player velocity" />
   </component>
 </project>

@@ -3,8 +3,7 @@
 #include <memory>
 #include <SFML/System/Vector2.hpp>
 #include "Components.h"
-
-class Window;
+#include "../../include/graphics/Window.h"
 
 class ColliderComponent: public Component{
 public:
@@ -24,7 +23,9 @@ public:
 
     // Draw bounding box (for debugging).
     virtual void draw(Window* window) {
-        window->draw(boundingBox.getDrawableRect());
+        if (window && window->isDebugBoundsVisible()) {
+            window->draw(boundingBox.getDrawableRect());
+        }
     }
 
     const Rectangle& getBoundingBox() const { return boundingBox; }

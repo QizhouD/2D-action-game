@@ -6,10 +6,21 @@
 InputHandler::InputHandler()
 {
     pauseCommand = std::make_shared<PauseCommand>();  // Initialize PauseCommand
+    toggleDebugCommand = std::make_shared<ToggleDebugBoundsCommand>();
 }
 
 std::shared_ptr<Command> InputHandler::handleInput()
 {
+    // Toggle debug bounds on F6 with debounce
+    static bool f6Pressed = false;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::F6)) {
+        if (!f6Pressed) {
+            f6Pressed = true;
+            return toggleDebugCommand;
+        }
+    } else {
+        f6Pressed = false;
+    }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))  // Check for Escape key
     {

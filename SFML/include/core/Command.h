@@ -53,7 +53,14 @@ class AttackCommand : public Command
 
 class ShoutCommand : public Command
 {
-    public:
-        void execute(Game& game) override;
-        
+public:
+    void execute(Game& game) override;
+    
+};
+
+// Toggle drawing of debug bounding boxes (F6)
+class ToggleDebugBoundsCommand : public Command
+{
+public:
+    void execute(Game& game) override;
 };
