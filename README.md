@@ -27,7 +27,7 @@ A complete 2D action game built with a flexible ECS (Entity Component System) ar
 
 - **Visual Studio 2022** with the "Desktop development with C++" workload.
 - **SFML 2.5.1:** The project is pre-configured to look for SFML at `D:\SFML\SFML-2.5.1\`.
-
+- **Links**: https://aka.ms/vs/17/release/vs_community.exe （Visual Studio 2022) /https://www.sfml-dev.org/download/sfml/2.5.1/ (SFML)
 ## Setup & Configuration
 
 If your SFML installation is in a different location, follow these steps:
