@@ -51,12 +51,6 @@ public:
     void update(Game* game, Entity* entity, float elapsed) override;
 };
 
-class GameplaySystem : public System {
-public:
-    GameplaySystem();
-    void update(Game* game, Entity* entity, float elapsed) override;
-};
-
 class PrintDebugSystem: public System{
 public:
     PrintDebugSystem();

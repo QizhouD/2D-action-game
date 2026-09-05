@@ -45,7 +45,6 @@ set(GAME_SOURCES
     ${GAME_ROOT}/source/graphics/SpriteSheetGraphicsComponent.cpp
     ${GAME_ROOT}/source/graphics/Window.cpp
     ${GAME_ROOT}/source/systems/ColliderSystem.cpp
-    ${GAME_ROOT}/source/systems/GameplaySystem.cpp
     ${GAME_ROOT}/source/systems/GraphicsSystem.cpp
     ${GAME_ROOT}/source/systems/InputSystem.cpp
     ${GAME_ROOT}/source/systems/MovementSystem.cpp

@@ -5,12 +5,14 @@
 #include <vector>
 
 class Game;
+class Window;
 
 class InputHandler
 {
 public:
     InputHandler();
-    std::shared_ptr<Command> handleInput();
+    // Global (non-player) commands: pause etc. Uses edge-triggered key events.
+    std::shared_ptr<Command> handleInput(const Window& window);
 
 private:
     std::shared_ptr<Command> pauseCommand;

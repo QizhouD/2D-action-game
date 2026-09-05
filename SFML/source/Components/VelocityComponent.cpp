@@ -1,5 +1,5 @@
-#include "../../include/Components/VelocityComponent.h"
-#include "../../include/Components/PositionComponent.h"
+#include "../../include/components/VelocityComponent.h"
+#include "../../include/components/PositionComponent.h"
 
 VelocityComponent::VelocityComponent(float spd)
     : velocity(0.f, 0.f), speed(spd)

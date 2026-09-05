@@ -16,7 +16,7 @@ public:
 	{
 		if (relevant)
 			return (b.getMask() & relevant) == (bits & relevant);
-		else (b.getMask() == bits);
+		return b.getMask() == bits;
 	}
 
 	bool contains(const Bitmask& other) const

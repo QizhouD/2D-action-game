@@ -4,17 +4,16 @@
 #include "../../include/core/Game.h"
 #include <iostream>
 
+const float Fire::speed = 200.f;
+
 Fire::Fire() : Entity(EntityType::FIRE) {
-    // Initialize the TTL component using the defined startTimeToLive.
     ttl = std::make_shared<TTLComponent>(startTimeToLive);
     addComponent(ttl);
 
-    // Initialize the Velocity component for Fire with a speed of 200.f.
-    velocity = std::make_shared<VelocityComponent>(200.f);
+    // Direction is set by the spawner; the speed factor turns it into px/s.
+    velocity = std::make_shared<VelocityComponent>(speed);
     addComponent(velocity);
-
 }
-
 
 Fire::~Fire() {}
 
@@ -23,9 +22,6 @@ std::shared_ptr<TTLComponent> Fire::getTTLComponent() const {
 }
 
 void Fire::update(Game* game, float elapsed) {
-    
-    if (velocity) {
-        velocity->update(*getPositionComp(), elapsed);
-    }
+    // Movement is integrated by MovementSystem; TTL by TTLSystem.
     Entity::update(game, elapsed);
 }

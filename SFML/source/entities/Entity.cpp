@@ -5,8 +5,9 @@
 #include <SFML/System/Vector2.hpp>
 #include "../../include/utils/Vector2.h"  
 #include <iostream>
+#include <stdexcept>
 #include "../../include/utils/Bitmask.h"
-#include "../../include/Components/TTLComponent.h"
+#include "../../include/components/TTLComponent.h"
 
 
 // Helper function to convert sf::Vector2f to your custom Vector2f type.
@@ -15,22 +16,25 @@ inline Vector2f toCustom(const sf::Vector2f& sfv) {
 }
 
 Entity::Entity()
-    : type(EntityType::UNDEFINED), id(0), isSpriteSheet(false), deleted(false)
+    : Entity(EntityType::UNDEFINED)
 {
-    // Initialize the position component.
-    positionComp = std::make_shared<PositionComponent>();
 }
 
 Entity::Entity(EntityType et)
     : type(et), id(0), isSpriteSheet(false), deleted(false)
 {
+    // Register the position component so systems that require POSITION
+    // (e.g. MovementSystem) actually match this entity.
     positionComp = std::make_shared<PositionComponent>();
+    addComponent(positionComp);
 }
 
 Entity::~Entity() {}
 
 void Entity::init(const std::string& textureFile, float scale) {
-    texture.loadFromFile(textureFile);
+    if (!texture.loadFromFile(textureFile)) {
+        throw std::runtime_error("Entity texture not found: " + textureFile);
+    }
     sprite.setTexture(texture);
     sprite.setScale(scale, scale);
     // Calculate bounding box size based on texture size and sprite scale.
@@ -69,7 +73,8 @@ void Entity::draw(Window* window) {
         window->draw(spriteSheet.getSprite());
     else
         window->draw(sprite);
-    window->draw(boundingBox.getDrawableRect());
+    if (window->isDebugDraw())
+        window->draw(boundingBox.getDrawableRect());
 }
 
 void Entity::setPosition(float x, float y) {

@@ -2,67 +2,67 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 #include "include/core/Game.h"
 
-void adaptiveLoop(Game& game, float& lastTime, float updateTarget = 0)
+namespace {
+
+std::vector<std::string> readLevelFile(const std::string& path)
 {
-    float current = game.getElapsed().asSeconds();
-    float elapsedSeconds = current - lastTime;
-
-    //Three function calls for the game loop: handleInput, update and render.
-    game.handleInput();
-    game.update(elapsedSeconds);
-    game.render(elapsedSeconds);
-
-    //Sleep to reach constant framerate.
-    if (elapsedSeconds < updateTarget)
-    {
-        sf::sleep(sf::seconds(updateTarget - elapsedSeconds));
+    std::ifstream in{ path };
+    if (!in) {
+        throw std::runtime_error("Level file not found: " + path);
     }
-
-    //Calculate FPS.
-    float fps = 1.0f / elapsedSeconds;
-    game.setFPS(static_cast<int>(fps));
-
-    std::cout << "FPS: " << fps << "; elapsed: " << std::fixed << elapsedSeconds << std::endl;
-
-    lastTime = current;
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(in, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty()) lines.push_back(line);
+    }
+    return lines;
 }
 
-int main(int argc, char** argv)
+} // namespace
+
+int main(int /*argc*/, char** /*argv*/)
 {
-    // Try to load the level:
-    std::ifstream levelRead{ "levels/lvl0.txt" };
-    if (!levelRead)
-    {
-        throw std::runtime_error("Level file not found: levels/lvl0.txt");
+    try {
+        Game game;
+        game.init(readLevelFile("levels/lvl0.txt"));
+
+        // Fixed-timestep simulation (60 Hz) with variable-rate rendering.
+        const float dt = 1.f / 60.f;
+        const float maxFrame = 0.25f;   // clamp after stalls (window drag, breakpoint...)
+        float accumulator = 0.f;
+        float fpsTimer = 0.f;
+        int fpsFrames = 0;
+
+        sf::Clock clock;
+        while (!game.getWindow()->isWindowDone()) {
+            float frame = clock.restart().asSeconds();
+            if (frame > maxFrame) frame = maxFrame;
+            accumulator += frame;
+
+            game.handleInput();
+            while (accumulator >= dt) {
+                game.update(dt);
+                accumulator -= dt;
+            }
+            game.render(frame);
+
+            fpsTimer += frame;
+            ++fpsFrames;
+            if (fpsTimer >= 0.5f) {
+                game.setFPS(static_cast<int>(fpsFrames / fpsTimer + 0.5f));
+                fpsTimer = 0.f;
+                fpsFrames = 0;
+            }
+        }
     }
-
-    // Convert file to vector of strings:
-    std::vector<std::string> lines;
-    while (levelRead)
-    {
-        std::string strInput;
-        std::getline(levelRead, strInput);
-        lines.emplace_back(strInput);
+    catch (const std::exception& e) {
+        std::cerr << "Fatal error: " << e.what() << std::endl;
+        return 1;
     }
-
-    // Create and initialize the game.
-    Game game;
-    game.init(lines);
-
-    // GAME LOOP (targeting 60FPS)
-    float updateTarget = 0.016f; // 60 FPS = ~0.016 sec per frame
-    float lastTime = game.getElapsed().asSeconds();
-
-    while (!game.getWindow()->isWindowDone())
-    {
-        adaptiveLoop(game, lastTime, updateTarget);
-    }
-
-    // Pause before exiting so you can see console output.
-    std::cout << "Press Enter to exit...";
-    std::cin.get();
-
     return 0;
 }

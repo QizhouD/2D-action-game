@@ -3,79 +3,37 @@
 #include "../../include/entities/Player.h"
 #include <SFML/Window/Keyboard.hpp>
 
-// Example PauseCommand
 void PauseCommand::execute(Game& game)
 {
     game.togglePause();
 }
 
-// Movement commands
-void MoveRightCommand::execute(Game& game)
-{
-    auto player = game.getPlayer();
-    if (!player) return;
-
-    // Retrieve the velocity component
-    auto vcomp = player->getVelocityComp();
-    if (!vcomp) return;
-
-    // Set velocity.x = +150, keep old velocity.y
-    sf::Vector2f oldVel = vcomp->getVelocity();
-    vcomp->setVelocity(150.f, oldVel.y);
+// Movement commands write a unit direction into the player's velocity component.
+// PlayerInputComponent normalises the combined direction and the component's
+// speed factor turns it into pixels per second, so diagonals are not faster.
+namespace {
+    void addDirection(Game& game, float dx, float dy)
+    {
+        auto player = game.getPlayer();
+        if (!player) return;
+        auto vcomp = player->getVelocityComp();
+        if (!vcomp) return;
+        sf::Vector2f v = vcomp->getVelocity();
+        vcomp->setVelocity(v.x + dx, v.y + dy);
+    }
 }
 
-void MoveLeftCommand::execute(Game& game)
-{
-    auto player = game.getPlayer();
-    if (!player) return;
+void MoveRightCommand::execute(Game& game) { addDirection(game,  1.f,  0.f); }
+void MoveLeftCommand::execute(Game& game)  { addDirection(game, -1.f,  0.f); }
+void MoveUpCommand::execute(Game& game)    { addDirection(game,  0.f, -1.f); }
+void MoveDownCommand::execute(Game& game)  { addDirection(game,  0.f,  1.f); }
 
-    auto vcomp = player->getVelocityComp();
-    if (!vcomp) return;
-
-    // Set velocity.x = -150, keep old velocity.y
-    sf::Vector2f oldVel = vcomp->getVelocity();
-    vcomp->setVelocity(-150.f, oldVel.y);
-}
-
-void MoveUpCommand::execute(Game& game)
-{
-    auto player = game.getPlayer();
-    if (!player) return;
-
-    auto vcomp = player->getVelocityComp();
-    if (!vcomp) return;
-
-    // Set velocity.y = -150, keep old velocity.x
-    sf::Vector2f oldVel = vcomp->getVelocity();
-    vcomp->setVelocity(oldVel.x, -150.f);
-}
-
-void MoveDownCommand::execute(Game& game)
-{
-    auto player = game.getPlayer();
-    if (!player) return;
-
-    auto vcomp = player->getVelocityComp();
-    if (!vcomp) return;
-
-    // Set velocity.y = +150, keep old velocity.x
-    sf::Vector2f oldVel = vcomp->getVelocity();
-    vcomp->setVelocity(oldVel.x, 150.f);
-}
-
-// Attack / Shout
 void AttackCommand::execute(Game& game)
 {
-    auto player = game.getPlayer();
-    if (player && !player->isAttacking()) {
-        player->setAttacking(true);
-    }
+    if (auto player = game.getPlayer()) player->startAttack();
 }
 
 void ShoutCommand::execute(Game& game)
 {
-    auto player = game.getPlayer();
-    if (player && !player->isShouting()) {
-        player->setShouting(true);
-    }
+    if (auto player = game.getPlayer()) player->startShout();
 }

@@ -30,7 +30,9 @@ public:
 
     AnimBase* getCurrentAnim() const;
 
-    bool setAnimation(const std::string& name, bool play = false, bool loop = false);
+    // Switches to `name`. Returns false if unknown or already current (unless
+    // `restart` is set, in which case the current animation is rewound and replayed).
+    bool setAnimation(const std::string& name, bool play = false, bool loop = false, bool restart = false);
 
     void update(float elapsedTime);
     void draw(sf::RenderWindow* window);

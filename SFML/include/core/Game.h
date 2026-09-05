@@ -47,6 +47,7 @@ public:
     void update(float elapsed);
     void render(float elapsed);
     Window* getWindow() { return &window; }
+    Board* getBoard() const { return board.get(); }
 
     sf::Time getElapsed() const;
     void setFPS(int FPS);
@@ -56,7 +57,6 @@ public:
     std::shared_ptr<Player> getPlayer() const { return player; }
 
     EntityID getIDCounter();
-    std::shared_ptr<Entity> getEntity(unsigned int idx);
 
     template <typename T>
     std::shared_ptr<T> buildEntityAt(const std::string& filename, int col, int row)
@@ -71,11 +71,16 @@ public:
     }
 
 private:
-
-    //method specific to Archetypes ECS
+    // Runs every system over every matching entity, once, using the selected ECS layout.
+    void runSystems(float elapsed);
     void updateArchetypes(float elapsed);
     void bigArray(float elapsed);
     void updatePackedArray(float elapsed);
+    void removeDeletedEntities();
+    // Entities spawned during a frame are queued and inserted here, so that
+    // spawning never invalidates a container that is being iterated.
+    void flushPendingEntities();
+
     Window window;
     bool paused;
     sf::Clock gameClock;
@@ -83,6 +88,7 @@ private:
 
     std::unique_ptr<Board> board;
     std::vector<std::shared_ptr<Entity>> entities;
+    std::vector<std::shared_ptr<Entity>> pendingEntities;
     std::vector<std::shared_ptr<System>> systems;
     EntityID entityCounter;
     std::shared_ptr<Player> player;

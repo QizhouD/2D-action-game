@@ -1,6 +1,8 @@
 #include "../../include/core/InputHandler.h"
 #include "../../include/core/Command.h"
+#include "../../include/graphics/Window.h"
 #include <SFML/Window/Keyboard.hpp>
+#include <iostream>
 #include <vector> 
 
 InputHandler::InputHandler()
@@ -8,12 +10,12 @@ InputHandler::InputHandler()
     pauseCommand = std::make_shared<PauseCommand>();  // Initialize PauseCommand
 }
 
-std::shared_ptr<Command> InputHandler::handleInput()
+std::shared_ptr<Command> InputHandler::handleInput(const Window& window)
 {
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))  // Check for Escape key
+    // Edge-triggered: one toggle per key press, however long the key is held.
+    if (window.wasKeyPressed(sf::Keyboard::Escape))
     {
-        return pauseCommand;  // Return pause command when Escape is pressed
+        return pauseCommand;
     }
     return nullptr;
 }

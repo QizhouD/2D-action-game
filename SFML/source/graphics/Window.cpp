@@ -1,14 +1,17 @@
 #include "../../include/graphics/Window.h"
 #include "../../include/core/Game.h"
-#include <iostream>
+#include <algorithm>
 #include <sstream>
 #include <stdexcept>
 
 Window::Window()
-    : windowTitle("")
-    , windowSize({ 0, 0 })
-    , isFullscreen(false)
+    : logicalSize({ 0, 0 })
+    , pixelSize({ 0, 0 })
+    , windowTitle("")
     , isDone(false)
+    , isFullscreen(false)
+    , focused(true)
+    , debugDraw(false)
 {
 }
 
@@ -20,18 +23,17 @@ void Window::loadFont(const std::string& fontFile)
         throw std::runtime_error("Font file not found for Window: " + fontFile);
     }
 
-    // Set up FPS text.
     fpsText.setCharacterSize(fontSize);
     fpsText.setFillColor(sf::Color::Red);
     fpsText.setFont(guiFont);
+    fpsText.setPosition(10.f, 10.f);
+    fpsText.setString("FPS: --");
 
-    // Set up paused text.
     pausedText.setCharacterSize(fontSize + 10);
     pausedText.setFillColor(sf::Color::Blue);
     pausedText.setFont(guiFont);
     pausedText.setString("PAUSED!");
 
-    // Set up health display text.
     healthText.setCharacterSize(fontSize);
     healthText.setFillColor(sf::Color::Green);
     healthText.setFont(guiFont);
@@ -42,15 +44,60 @@ void Window::loadFont(const std::string& fontFile)
 void Window::setup(const std::string& title, const sf::Vector2u& size)
 {
     windowTitle = title;
-    windowSize = size;
+    logicalSize = size;
     create();
 }
 
 void Window::create()
 {
-    auto style = (isFullscreen ? sf::Style::Fullscreen : sf::Style::Default);
-    window.create({ windowSize.x, windowSize.y, 32 }, windowTitle, style);
-    pausedText.setPosition(windowSize.x * 0.5f, 0.0f);
+    const sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+
+    if (isFullscreen) {
+        pixelSize = { desktop.width, desktop.height };
+        window.create(desktop, windowTitle, sf::Style::Fullscreen);
+    }
+    else {
+        // Leave room for the title bar / task bar; never upscale a small map.
+        const float margin = 0.9f;
+        const float sx = (desktop.width * margin) / static_cast<float>(logicalSize.x);
+        const float sy = (desktop.height * margin) / static_cast<float>(logicalSize.y);
+        const float scale = std::min(1.f, std::min(sx, sy));
+        pixelSize = {
+            static_cast<unsigned>(logicalSize.x * scale),
+            static_cast<unsigned>(logicalSize.y * scale)
+        };
+        window.create({ pixelSize.x, pixelSize.y, 32 }, windowTitle, sf::Style::Default);
+    }
+
+    window.setFramerateLimit(60);
+    window.setKeyRepeatEnabled(false);
+    applyView();
+
+    // Centre the pause banner in logical space.
+    const auto b = pausedText.getLocalBounds();
+    pausedText.setOrigin(b.left + b.width * 0.5f, b.top);
+    pausedText.setPosition(logicalSize.x * 0.5f, 10.f);
+}
+
+void Window::applyView()
+{
+    if (logicalSize.x == 0 || logicalSize.y == 0) return;
+
+    sf::View view(sf::FloatRect(0.f, 0.f,
+        static_cast<float>(logicalSize.x), static_cast<float>(logicalSize.y)));
+
+    const float winRatio = static_cast<float>(pixelSize.x) / static_cast<float>(pixelSize.y);
+    const float viewRatio = static_cast<float>(logicalSize.x) / static_cast<float>(logicalSize.y);
+
+    if (winRatio > viewRatio) {          // window is wider: pillar-box
+        const float w = viewRatio / winRatio;
+        view.setViewport({ (1.f - w) * 0.5f, 0.f, w, 1.f });
+    }
+    else {                               // window is taller: letter-box
+        const float h = winRatio / viewRatio;
+        view.setViewport({ 0.f, (1.f - h) * 0.5f, 1.f, h });
+    }
+    window.setView(view);
 }
 
 void Window::destroy()
@@ -58,15 +105,41 @@ void Window::destroy()
     window.close();
 }
 
-void Window::update()
+void Window::pollEvents()
 {
+    keysPressed.clear();
+
     sf::Event event;
     while (window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed)
+        switch (event.type) {
+        case sf::Event::Closed:
             isDone = true;
-        else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5)
-            toggleFullscreen();
+            break;
+        case sf::Event::KeyPressed:
+            if (event.key.code == sf::Keyboard::F5)
+                toggleFullscreen();
+            else
+                keysPressed.push_back(event.key.code);
+            break;
+        case sf::Event::Resized:
+            pixelSize = { event.size.width, event.size.height };
+            applyView();
+            break;
+        case sf::Event::LostFocus:
+            focused = false;
+            break;
+        case sf::Event::GainedFocus:
+            focused = true;
+            break;
+        default:
+            break;
+        }
     }
+}
+
+bool Window::wasKeyPressed(sf::Keyboard::Key key) const
+{
+    return std::find(keysPressed.begin(), keysPressed.end(), key) != keysPressed.end();
 }
 
 void Window::toggleFullscreen()
@@ -86,9 +159,11 @@ void Window::endDraw() { window.display(); }
 
 bool Window::isWindowDone() const { return isDone; }
 bool Window::isWindowFullscreen() const { return isFullscreen; }
-const sf::Vector2u& Window::getWindowSize() const { return windowSize; }
-const sf::Font& Window::getGUIFont() const { return guiFont; }
-sf::Text& Window::getFPSText() { return fpsText; }
+
+void Window::setFPS(int fps)
+{
+    fpsText.setString("FPS: " + std::to_string(fps));
+}
 
 void Window::drawGUI(const Game& game)
 {
@@ -106,6 +181,6 @@ void Window::drawGUI(const Game& game)
     }
 }
 
-void Window::draw(sf::Drawable& drawable) {
+void Window::draw(const sf::Drawable& drawable) {
     window.draw(drawable);
 }

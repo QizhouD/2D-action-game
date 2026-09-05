@@ -155,7 +155,6 @@
     <ClCompile Include="source\graphics\SpriteSheetGraphicsComponent.cpp" />
     <ClCompile Include="source\graphics\Window.cpp" />
     <ClCompile Include="source\systems\ColliderSystem.cpp" />
-    <ClCompile Include="source\systems\GameplaySystem.cpp" />
     <ClCompile Include="source\systems\GraphicsSystem.cpp" />
     <ClCompile Include="source\systems\InputSystem.cpp" />
     <ClCompile Include="source\systems\MovementSystem.cpp" />

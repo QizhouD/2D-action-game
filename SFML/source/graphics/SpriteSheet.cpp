@@ -105,10 +105,10 @@ AnimBase* SpriteSheet::getCurrentAnim() const {
     return curAnimation;
 }
 
-bool SpriteSheet::setAnimation(const std::string& name, bool play, bool loop) {
+bool SpriteSheet::setAnimation(const std::string& name, bool play, bool loop, bool restart) {
     auto itr = animations.find(name);
     if (itr == animations.end()) return false;
-    if (itr->second == curAnimation) return false;
+    if (itr->second == curAnimation && !restart) return false;
     if (curAnimation)
         curAnimation->stop();
     curAnimation = itr->second;

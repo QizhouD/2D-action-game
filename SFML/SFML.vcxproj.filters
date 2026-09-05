@@ -72,9 +72,6 @@
     <ClCompile Include="source\systems\ColliderSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\systems\GameplaySystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\systems\GraphicsSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
