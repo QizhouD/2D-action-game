@@ -13,9 +13,14 @@ public:
     Fire();
     ~Fire();
 
+    void init(const std::string& textureFile, float scale) override;
     void update(Game* game, float elapsed = 1.0f) override;
     // Fireballs burst on walls.
-    void onWallHit() override { deleteEntity(); }
+    void onWallHit(Game* game) override;
+
+    // Unit direction of travel; also rotates the sprite.
+    void setDirection(const sf::Vector2f& dir);
+    const sf::Vector2f& getDirection() const { return direction; }
 
     int getDamage() const { return damage; }
     void setDamage(int d) { damage = d; }
@@ -26,6 +31,7 @@ public:
 
 private:
     int damage = 30;
+    sf::Vector2f direction{ 1.f, 0.f };
     std::shared_ptr<TTLComponent> ttl;
     std::shared_ptr<VelocityComponent> velocity;
 };

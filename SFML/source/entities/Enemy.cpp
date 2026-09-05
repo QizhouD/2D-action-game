@@ -37,7 +37,7 @@ void Enemy::init(const std::string& textureFile, float scale) {
     setHitbox(inset, size.y - h - inset * 0.5f, w, h);
 }
 
-void Enemy::onWallHit() {
+void Enemy::onWallHit(Game* /*game*/) {
     ai->hitWall = true;
 }
 

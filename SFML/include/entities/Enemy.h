@@ -31,7 +31,7 @@ public:
     void init(const std::string& textureFile, float scale) override;
     void update(Game* game, float elapsed) override;
     void draw(Window* window) override;
-    void onWallHit() override;
+    void onWallHit(Game* game) override;
 
     // Applies damage; returns true if this hit killed the enemy.
     bool takeDamage(int amount);

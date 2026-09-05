@@ -68,10 +68,14 @@ void Game::init(const std::string& levelListFile)
     window.setTitle("Dwarf & Fire");
     hud.init(window.getGUIFont(), "img/log.png");
 
+    save.load(saveFile);
+
     auto audio = std::make_shared<AudioManager>();
     audio->loadSound("pickup", "audio/potion_collect.wav");
     audio->loadSound("fire", "audio/fire.wav");
     audio->loadSound("axe", "audio/sword-slash.wav");
+    audio->addSynthDefaults();
+    audio->setMuted(save.muted);
     ServiceLocator::provide(audio);
 
     // The player lives across levels; only its position is reset per level.
@@ -87,8 +91,32 @@ void Game::init(const std::string& levelListFile)
     registerCollisionCallback(EntityType::ENEMY,  [this](Entity* e) { player->handleEnemyCollision(e); });
 
     loadLevelList(levelListFile);
+    if (save.levelsUnlocked > getLevelCount()) save.levelsUnlocked = getLevelCount();
+    menuLevel = 0;
     loadLevel(0);                 // shown behind the main menu
     setState(GameState::MainMenu);
+}
+
+void Game::playSound(const std::string& name, float volume, float pitch)
+{
+    if (auto audio = ServiceLocator::getAudio()) audio->playSound(name, volume, pitch);
+}
+
+void Game::toggleMute()
+{
+    save.muted = !save.muted;
+    if (auto audio = ServiceLocator::getAudio()) audio->setMuted(save.muted);
+    save.save(saveFile);
+    hud.pushToast(save.muted ? "Sound off" : "Sound on", 1.2f);
+}
+
+void Game::recordProgress()
+{
+    bool changed = false;
+    if (getScore() > save.highScore) { save.highScore = getScore(); changed = true; }
+    const int reached = std::min(getLevelCount(), currentLevel + 2);   // next level becomes startable
+    if (state == GameState::LevelClear && reached > save.levelsUnlocked) { save.levelsUnlocked = reached; changed = true; }
+    if (changed) save.save(saveFile);
 }
 
 void Game::loadLevelList(const std::string& file)
@@ -154,10 +182,11 @@ void Game::loadLevel(int index)
 
     const float tile = spriteWH * tileScale;
     board = std::make_unique<Board>(w, h, tile);
+    particles.clear();
 
-    const sf::Vector2u logical(static_cast<unsigned>(w * tile), static_cast<unsigned>(h * tile));
-    if (!window.isCreated()) window.setup("Dwarf & Fire", logical);
-    else                     window.setLogicalSize(logical);
+    const sf::Vector2u worldPx(static_cast<unsigned>(w * tile), static_cast<unsigned>(h * tile));
+    window.setWorld(worldPx);
+    if (!window.isCreated()) window.setup("Dwarf & Fire", window.getLogicalSize());
 
     bool playerPlaced = false;
     int potions = 0;
@@ -210,19 +239,21 @@ void Game::loadLevel(int index)
     player->onLevelStart();
     addEntity(player);
     flushPendingEntities();
+    window.snapCamera(player->getCenter());
 
     achievementObserver->startLevel(potions);
     lastPlayerHealth = player->getHealthComp()->getHealth();
     board->setExitActive(enemiesAlive == 0);
 }
 
-void Game::startNewGame()
+void Game::startNewGame(int firstLevel)
 {
     achievementObserver->resetAll();
     player->resetStats();
-    loadLevel(0);
+    loadLevel(std::max(0, std::min(firstLevel, getLevelCount() - 1)));
     setState(GameState::Playing);
-    hud.pushToast("Level 1: clear the mushrooms!");
+    hud.pushToast(currentLevel == 0 ? "Level 1: clear the mushrooms!"
+                                    : "Level " + std::to_string(currentLevel + 1));
 }
 
 void Game::restartLevel()
@@ -245,7 +276,15 @@ void Game::nextLevel()
 
 void Game::setState(GameState s)
 {
+    if (s == state) return;
     state = s;
+    switch (state) {
+    case GameState::LevelClear: playSound("level_clear"); recordProgress(); break;
+    case GameState::Victory:    playSound("level_clear", 100.f, 1.2f); recordProgress(); break;
+    case GameState::GameOver:   playSound("game_over"); recordProgress(); break;
+    case GameState::Paused:     playSound("menu", 60.f, 0.8f); break;
+    default: break;
+    }
 }
 
 void Game::togglePause()
@@ -300,6 +339,14 @@ void Game::onEnemyKilled(Enemy* enemy)
     if (roll(rng) < enemy->getStats().potionDropChance) {
         spawnPotionAt(enemy->getCenter());
     }
+
+    const bool boss = enemy->getStats().score >= 1000;
+    playSound(boss ? "boss_die" : "enemy_die");
+    const float size = enemy->getSpriteSize().x;
+    particles.burst(enemy->getCenter(), boss ? 90 : 26, size * 1.6f, boss ? 0.9f : 0.5f, size * 0.09f,
+                    sf::Color(255, 90, 90), sf::Color(120, 20, 20, 0));
+    particles.burst(enemy->getCenter(), boss ? 40 : 12, size * 0.8f, 0.6f, size * 0.06f,
+                    sf::Color(250, 250, 230), sf::Color(250, 250, 230, 0));
 }
 
 // ---------------------------------------------------------------------------
@@ -310,14 +357,24 @@ void Game::handleInput()
 {
     window.pollEvents();
 
-    if (window.wasKeyPressed(sf::Keyboard::F1)) {
-        window.setDebugDraw(!window.isDebugDraw());
-    }
+    if (window.wasKeyPressed(sf::Keyboard::F1)) window.setDebugDraw(!window.isDebugDraw());
+    if (window.wasKeyPressed(sf::Keyboard::M))  toggleMute();
+
+    // Gamepad: A confirms, Start pauses/confirms, B/Back goes back.
+    const bool confirm = window.wasKeyPressed(sf::Keyboard::Enter) || window.wasJoyButtonPressed(0) || window.wasJoyButtonPressed(7);
+    const bool back    = window.wasKeyPressed(sf::Keyboard::Escape) || window.wasJoyButtonPressed(1) || window.wasJoyButtonPressed(6);
+    const bool left    = window.wasKeyPressed(sf::Keyboard::Left)  || window.wasKeyPressed(sf::Keyboard::A);
+    const bool right   = window.wasKeyPressed(sf::Keyboard::Right) || window.wasKeyPressed(sf::Keyboard::D);
+
+    // Auto-pause when the window goes to the background.
+    if (state == GameState::Playing && !window.hasFocus()) setState(GameState::Paused);
 
     switch (state) {
     case GameState::MainMenu:
-        if (window.wasKeyPressed(sf::Keyboard::Enter)) startNewGame();
-        else if (window.wasKeyPressed(sf::Keyboard::Escape)) window.close();
+        if (confirm) { playSound("menu"); startNewGame(menuLevel); }
+        else if (back) window.close();
+        else if (left && menuLevel > 0)  { --menuLevel; playSound("menu", 60.f); }
+        else if (right && menuLevel + 1 < save.levelsUnlocked) { ++menuLevel; playSound("menu", 60.f); }
         break;
 
     case GameState::Playing:
@@ -325,21 +382,21 @@ void Game::handleInput()
         if (auto cmd = inputHandler->handleInput(window)) cmd->execute(*this);
         if (state == GameState::Paused) {
             if (window.wasKeyPressed(sf::Keyboard::R)) restartLevel();
-            else if (window.wasKeyPressed(sf::Keyboard::Q)) setState(GameState::MainMenu);
+            else if (window.wasKeyPressed(sf::Keyboard::Q) || window.wasJoyButtonPressed(6)) setState(GameState::MainMenu);
         }
         break;
 
     case GameState::LevelClear:
-        if (window.wasKeyPressed(sf::Keyboard::Enter)) nextLevel();
+        if (confirm) nextLevel();
         break;
 
     case GameState::GameOver:
-        if (window.wasKeyPressed(sf::Keyboard::R)) restartLevel();
-        else if (window.wasKeyPressed(sf::Keyboard::Enter)) setState(GameState::MainMenu);
+        if (window.wasKeyPressed(sf::Keyboard::R) || window.wasJoyButtonPressed(0)) restartLevel();
+        else if (window.wasKeyPressed(sf::Keyboard::Enter) || window.wasJoyButtonPressed(1)) setState(GameState::MainMenu);
         break;
 
     case GameState::Victory:
-        if (window.wasKeyPressed(sf::Keyboard::Enter)) setState(GameState::MainMenu);
+        if (confirm) setState(GameState::MainMenu);
         break;
     }
 }
@@ -348,6 +405,7 @@ void Game::update(float elapsed)
 {
     hud.update(elapsed);
     if (board) board->advanceAnimation(elapsed);
+    if (state != GameState::Paused) particles.update(elapsed);
 
     if (state != GameState::Playing) return;
 
@@ -400,6 +458,9 @@ void Game::handleCollisions()
             if (fire->getBoundingBox().intersects(enemy->getBoundingBox())) {
                 enemy->takeDamage(fire->getDamage());
                 fire->deleteEntity();
+                playSound("fire_hit", 80.f);
+                particles.burst(fire->getCenter(), 14, 140.f, 0.3f, 5.f,
+                                sf::Color(255, 220, 120), sf::Color(200, 60, 0, 0));
                 break;
             }
         }
@@ -409,9 +470,14 @@ void Game::handleCollisions()
 
 void Game::checkLevelProgress()
 {
-    // Damage flash on health loss.
+    // Damage feedback on health loss.
     const int hp = player->getHealthComp()->getHealth();
-    if (hp < lastPlayerHealth) hud.flashDamage();
+    if (hp < lastPlayerHealth) {
+        hud.flashDamage();
+        playSound("hurt");
+        particles.burst(player->getCenter(), 14, 120.f, 0.4f, 4.f,
+                        sf::Color(255, 60, 60), sf::Color(160, 0, 0, 0));
+    }
     lastPlayerHealth = hp;
 
     // Count living enemies; credit every kill exactly once (score, drops).
@@ -438,6 +504,7 @@ void Game::checkLevelProgress()
         if (board->hasExit()) {
             if (!board->isExitActive()) {
                 board->setExitActive(true);
+                playSound("exit_open");
                 hud.pushToast("Exit open! Step on the golden circle.");
             }
             if (board->isOnActiveExit(player->getBoundingBox())) {
@@ -513,17 +580,24 @@ void Game::removeDeletedEntities()
     entities.erase(std::remove_if(entities.begin(), entities.end(), isDeleted), entities.end());
 }
 
-void Game::render(float /*elapsed*/)
+void Game::render(float elapsed)
 {
-    window.beginDraw();
-    if (board) { board->draw(&window); }
+    if (player) window.followCamera(player->getCenter(), elapsed);
 
+    window.beginDraw();
+
+    // World layer (scrolls with the camera).
+    window.beginWorld();
+    if (board) { board->draw(&window); }
     // Draw order: pickups, enemies, fire, then the player on top.
     for (auto& ent : entities) {
         if (ent != player) ent->draw(&window);
     }
     if (player && state != GameState::MainMenu) player->draw(&window);
+    particles.draw(window);
 
+    // UI layer (fixed to the screen).
+    window.beginUI();
     if (state == GameState::Playing || state == GameState::Paused) {
         hud.drawGameplay(window, *this);
     }

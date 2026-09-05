@@ -19,6 +19,9 @@ mono_crash.*
 # Local planning notes (not tracked)
 OPTIMIZATION_PLAN.md
 
+# Player progress written next to the executable
+save.txt
+
 # Build results
 build/
 [Dd]ebug/

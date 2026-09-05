@@ -53,8 +53,14 @@ public:
     void draw(Window* window) override;
 
     // Actions (called by commands). Each starts its animation exactly once.
+    // If the dwarf is mid-action the request is buffered for a short window
+    // and fired as soon as it is free, so mashed inputs are not dropped.
     void startAttack();
     void startShout();
+    static const float inputBufferTime;   // seconds
+
+    // Last movement direction (4-way), used for aiming fireballs.
+    const sf::Vector2f& getFacing() const { return facing; }
 
     bool isAttacking() const { return attacking; }
     bool isShouting() const { return shouting; }
@@ -78,11 +84,16 @@ private:
     void updateMovementAnimation();
     std::shared_ptr<Observer> observer;
 
+    enum class Buffered { None, Attack, Shout };
+
     bool attacking;
     bool shouting;
     bool fireSpawnedThisShout;
     bool dead;
     float invulnTimer;
+    Buffered buffered = Buffered::None;
+    float bufferTimer = 0.f;
+    sf::Vector2f facing{ 1.f, 0.f };
     std::set<EntityID> hitThisSwing;   // enemies already damaged by the current attack
     std::shared_ptr<HealthComponent> healthComp;
     int wood;

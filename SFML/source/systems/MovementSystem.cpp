@@ -46,5 +46,5 @@ void MovementSystem::update(Game* game, Entity* entity, float elapsed) {
     }
 
     posComp->setPosition(pos);
-    if (blocked) entity->onWallHit();
+    if (blocked) entity->onWallHit(game);
 }

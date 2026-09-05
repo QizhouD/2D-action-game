@@ -8,3 +8,4 @@
 lvl0.txt
 lvl1.txt
 lvl2.txt
+lvl3.txt

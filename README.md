@@ -47,16 +47,24 @@ The original project expects SFML 2.5.1 (static, x64) at `D:\SFML\SFML-2.5.1`. A
 
 | Key | Action |
 | --- | --- |
-| `W A S D` / arrow keys | Move (`Tab` toggles between the two schemes) |
-| `Space` | Axe attack — chop logs to collect wood, hit enemies |
-| `Left Shift` | Shout — spend 1 wood to launch a fireball |
-| `Enter` | Confirm in menus (start / next level) |
-| `Esc` | Pause / resume (`R` restart level, `Q` back to menu while paused) |
-| `F1` | Toggle debug bounding boxes |
+| `W A S D` / arrow keys / gamepad stick | Move (`Tab` toggles between the two keyboard schemes) |
+| `Space` / gamepad `A` | Axe attack — chop logs to collect wood, hit enemies |
+| `Left Shift` / gamepad `B` | Shout — spend 1 wood to launch a fireball in the direction you last walked |
+| `Enter` / gamepad `A` | Confirm in menus (start / next level); `Left`/`Right` pick an unlocked start level |
+| `Esc` / gamepad `Start` | Pause / resume (`R` restart level, `Q` back to menu while paused) |
+| `M` | Mute / unmute |
+| `F1` | Toggle debug bounding boxes and FPS |
 | `F5` | Toggle fullscreen |
 
-Goal: kill every mushroom on the level, then step on the golden exit circle. Three levels; the last one has a boss.
+Goal: kill every mushroom on the level, then step on the golden exit circle. Four levels; the last one has a boss. Levels bigger than the window scroll with the camera. Best score and unlocked levels are stored in `save.txt` next to the executable. The game pauses itself when the window loses focus.
 
-### Scripted runs (automation / regression)
+### Levels
 
-`MiniGame.exe --script <file>` replaces the keyboard with a timed script and can dump frames to PNG without needing window focus (see the comment block in `SFML/include/graphics/Window.h` for the format).
+`levels/levels.txt` lists the level files in play order; the tile legend is documented at the top of that file. Add a new `.txt` map and a line in the list to add a level — no code changes needed.
+
+### Command line
+
+| Flag | Meaning |
+| --- | --- |
+| `--levels <list.txt>` | Use another level list (level files are resolved relative to the list) |
+| `--script <file>` | Replace the keyboard with a timed script and dump frames to PNG — works without window focus, handy for regression checks (format documented in `SFML/include/graphics/Window.h`) |

@@ -35,6 +35,7 @@ set(GAME_SOURCES
     ${GAME_ROOT}/source/core/Game.cpp
     ${GAME_ROOT}/source/core/GameCommand.cpp
     ${GAME_ROOT}/source/core/InputHandler.cpp
+    ${GAME_ROOT}/source/core/SaveData.cpp
     ${GAME_ROOT}/source/core/Tile.cpp
     ${GAME_ROOT}/source/entities/Enemy.cpp
     ${GAME_ROOT}/source/entities/Entity.cpp
@@ -43,6 +44,7 @@ set(GAME_SOURCES
     ${GAME_ROOT}/source/graphics/AnimBase.cpp
     ${GAME_ROOT}/source/graphics/AnimDirectional.cpp
     ${GAME_ROOT}/source/graphics/Hud.cpp
+    ${GAME_ROOT}/source/graphics/ParticleSystem.cpp
     ${GAME_ROOT}/source/graphics/SpriteSheet.cpp
     ${GAME_ROOT}/source/graphics/SpriteSheetGraphicsComponent.cpp
     ${GAME_ROOT}/source/graphics/Window.cpp

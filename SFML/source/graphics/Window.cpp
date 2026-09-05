@@ -1,5 +1,6 @@
 #include "../../include/graphics/Window.h"
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -25,11 +26,16 @@ namespace {
             return static_cast<sf::Keyboard::Key>(sf::Keyboard::Num0 + (name[3] - '0'));
         return sf::Keyboard::Unknown;
     }
+
+    constexpr float kJoyDeadZone = 35.f;   // SFML axes are in [-100, 100]
 }
 
 Window::Window()
-    : logicalSize({ 0, 0 })
+    : worldSize({ 0, 0 })
+    , viewSize({ 0, 0 })
+    , maxView({ 1300, 1300 })
     , pixelSize({ 0, 0 })
+    , camera(0.f, 0.f)
     , windowTitle("")
     , isDone(false)
     , isFullscreen(false)
@@ -47,17 +53,16 @@ void Window::loadFont(const std::string& fontFile)
     }
 }
 
+// ---------------------------------------------------------------------------
+// Window creation / viewport
+// ---------------------------------------------------------------------------
+
 void Window::setup(const std::string& title, const sf::Vector2u& size)
 {
     windowTitle = title;
-    logicalSize = size;
+    viewSize = size;
+    if (worldSize.x == 0) worldSize = size;
     create();
-}
-
-void Window::setLogicalSize(const sf::Vector2u& size)
-{
-    logicalSize = size;
-    applyView();
 }
 
 void Window::create()
@@ -71,30 +76,27 @@ void Window::create()
     else {
         // Leave room for the title bar / task bar; never upscale a small map.
         const float margin = 0.9f;
-        const float sx = (desktop.width * margin) / static_cast<float>(logicalSize.x);
-        const float sy = (desktop.height * margin) / static_cast<float>(logicalSize.y);
+        const float sx = (desktop.width * margin) / static_cast<float>(viewSize.x);
+        const float sy = (desktop.height * margin) / static_cast<float>(viewSize.y);
         const float scale = std::min(1.f, std::min(sx, sy));
         pixelSize = {
-            static_cast<unsigned>(logicalSize.x * scale),
-            static_cast<unsigned>(logicalSize.y * scale)
+            static_cast<unsigned>(viewSize.x * scale),
+            static_cast<unsigned>(viewSize.y * scale)
         };
         window.create({ pixelSize.x, pixelSize.y, 32 }, windowTitle, sf::Style::Default);
     }
 
     window.setFramerateLimit(60);
     window.setKeyRepeatEnabled(false);
-    applyView();
+    beginUI();
 }
 
-void Window::applyView()
+void Window::applyViewport(sf::View& view) const
 {
-    if (logicalSize.x == 0 || logicalSize.y == 0 || pixelSize.x == 0 || pixelSize.y == 0) return;
-
-    sf::View view(sf::FloatRect(0.f, 0.f,
-        static_cast<float>(logicalSize.x), static_cast<float>(logicalSize.y)));
+    if (viewSize.x == 0 || viewSize.y == 0 || pixelSize.x == 0 || pixelSize.y == 0) return;
 
     const float winRatio = static_cast<float>(pixelSize.x) / static_cast<float>(pixelSize.y);
-    const float viewRatio = static_cast<float>(logicalSize.x) / static_cast<float>(logicalSize.y);
+    const float viewRatio = static_cast<float>(viewSize.x) / static_cast<float>(viewSize.y);
 
     if (winRatio > viewRatio) {          // window is wider: pillar-box
         const float w = viewRatio / winRatio;
@@ -104,8 +106,66 @@ void Window::applyView()
         const float h = winRatio / viewRatio;
         view.setViewport({ 0.f, (1.f - h) * 0.5f, 1.f, h });
     }
+}
+
+// ---------------------------------------------------------------------------
+// World / camera
+// ---------------------------------------------------------------------------
+
+void Window::setWorld(const sf::Vector2u& size)
+{
+    worldSize = size;
+    viewSize = { std::min(size.x, maxView.x), std::min(size.y, maxView.y) };
+    camera = { viewSize.x * 0.5f, viewSize.y * 0.5f };
+}
+
+void Window::clampCamera()
+{
+    const float hw = viewSize.x * 0.5f, hh = viewSize.y * 0.5f;
+    camera.x = std::max(hw, std::min(camera.x, worldSize.x - hw));
+    camera.y = std::max(hh, std::min(camera.y, worldSize.y - hh));
+}
+
+void Window::snapCamera(const sf::Vector2f& target)
+{
+    camera = target;
+    clampCamera();
+}
+
+void Window::followCamera(const sf::Vector2f& target, float elapsed)
+{
+    // Exponential smoothing: closes ~99% of the gap in about half a second.
+    const float t = std::min(1.f, 9.f * elapsed);
+    camera += (target - camera) * t;
+    clampCamera();
+    // Kill sub-pixel jitter on the tile map.
+    camera.x = std::round(camera.x);
+    camera.y = std::round(camera.y);
+}
+
+void Window::beginWorld()
+{
+    sf::View view(camera, sf::Vector2f(static_cast<float>(viewSize.x), static_cast<float>(viewSize.y)));
+    applyViewport(view);
     window.setView(view);
 }
+
+void Window::beginUI()
+{
+    sf::View view(sf::FloatRect(0.f, 0.f, static_cast<float>(viewSize.x), static_cast<float>(viewSize.y)));
+    applyViewport(view);
+    window.setView(view);
+}
+
+sf::FloatRect Window::getVisibleWorldRect() const
+{
+    return { camera.x - viewSize.x * 0.5f, camera.y - viewSize.y * 0.5f,
+             static_cast<float>(viewSize.x), static_cast<float>(viewSize.y) };
+}
+
+// ---------------------------------------------------------------------------
+// Events / input
+// ---------------------------------------------------------------------------
 
 void Window::destroy()
 {
@@ -115,6 +175,7 @@ void Window::destroy()
 void Window::pollEvents()
 {
     keysPressed.clear();
+    joyPressed.clear();
     scriptTapped.clear();
 
     sf::Event event;
@@ -130,9 +191,13 @@ void Window::pollEvents()
             else
                 keysPressed.push_back(event.key.code);
             break;
+        case sf::Event::JoystickButtonPressed:
+            if (event.joystickButton.joystickId == 0)
+                joyPressed.push_back(event.joystickButton.button);
+            break;
         case sf::Event::Resized:
             pixelSize = { event.size.width, event.size.height };
-            applyView();
+            beginUI();
             break;
         case sf::Event::LostFocus:
             focused = false;
@@ -157,6 +222,38 @@ bool Window::isKeyDown(sf::Keyboard::Key key) const
 {
     if (scripted) return scriptHeld.count(key) > 0 || scriptTapped.count(key) > 0;
     return sf::Keyboard::isKeyPressed(key);
+}
+
+bool Window::isJoystickConnected() const
+{
+    return !scripted && sf::Joystick::isConnected(0);
+}
+
+bool Window::wasJoyButtonPressed(unsigned button) const
+{
+    return std::find(joyPressed.begin(), joyPressed.end(), button) != joyPressed.end();
+}
+
+bool Window::isJoyButtonDown(unsigned button) const
+{
+    return isJoystickConnected() && sf::Joystick::isButtonPressed(0, button);
+}
+
+sf::Vector2f Window::getJoyDirection() const
+{
+    if (!isJoystickConnected()) return { 0.f, 0.f };
+    auto axis = [](sf::Joystick::Axis a) {
+        if (!sf::Joystick::hasAxis(0, a)) return 0.f;
+        const float v = sf::Joystick::getAxisPosition(0, a);
+        return std::abs(v) < kJoyDeadZone ? 0.f : v / 100.f;
+    };
+    sf::Vector2f dir(axis(sf::Joystick::X), axis(sf::Joystick::Y));
+    // D-pad (POV hat): X right positive, Y up positive on most drivers.
+    const float px = axis(sf::Joystick::PovX);
+    const float py = axis(sf::Joystick::PovY);
+    if (px != 0.f) dir.x = px;
+    if (py != 0.f) dir.y = -py;
+    return dir;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,6 +313,10 @@ void Window::takeScreenshot(const std::string& file)
     else
         std::cerr << "[Window] failed to save screenshot: " << file << "\n";
 }
+
+// ---------------------------------------------------------------------------
+// Drawing
+// ---------------------------------------------------------------------------
 
 void Window::toggleFullscreen()
 {

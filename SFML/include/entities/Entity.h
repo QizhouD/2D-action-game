@@ -59,7 +59,7 @@ public:
     // Whether MovementSystem should stop this entity at WALL tiles.
     virtual bool blocksOnWalls() const { return true; }
     // Called by MovementSystem when a move was rejected by a wall.
-    virtual void onWallHit() {}
+    virtual void onWallHit(Game* /*game*/) {}
 
     const SpriteSheet* getSpriteSheet() const { return &spriteSheet; }
     EntityType getEntityType() const { return type; }

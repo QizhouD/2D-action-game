@@ -1,7 +1,9 @@
 #pragma once
 #include "../../include/graphics/Window.h"
 #include "../../include/graphics/Hud.h"
+#include "../../include/graphics/ParticleSystem.h"
 #include "../../include/core/Board.h"
+#include "../../include/core/SaveData.h"
 #include "../../include/entities/Player.h"
 #include "Command.h"
 #include <memory>
@@ -67,7 +69,15 @@ public:
     int getScore() const { return achievementObserver ? achievementObserver->getScore() : 0; }
     int getKills() const { return achievementObserver ? achievementObserver->getKills() : 0; }
 
+    // Persistent progress shown in the menu.
+    int getHighScore() const { return save.highScore; }
+    int getLevelsUnlocked() const { return save.levelsUnlocked; }
+    int getMenuLevel() const { return menuLevel; }
+    bool isMuted() const { return save.muted; }
+
     void pushToast(const std::string& text) { hud.pushToast(text); }
+    ParticleSystem& getParticles() { return particles; }
+    void playSound(const std::string& name, float volume = 100.f, float pitch = 1.f);
 
     // Gameplay events
     void onEnemyKilled(Enemy* enemy);
@@ -91,10 +101,12 @@ private:
     // --- Level flow --------------------------------------------------------
     void loadLevelList(const std::string& file);
     void loadLevel(int index);
-    void startNewGame();
+    void startNewGame(int firstLevel);
     void restartLevel();
     void nextLevel();
     void setState(GameState s);
+    void toggleMute();
+    void recordProgress();   // high score / unlocked levels -> save file
     // Centres an already-initialised entity inside tile (col,row).
     void placeInTile(Entity& ent, int col, int row) const;
 
@@ -112,6 +124,10 @@ private:
 
     Window window;
     Hud hud;
+    ParticleSystem particles;
+    SaveData save;
+    std::string saveFile = "save.txt";
+    int menuLevel = 0;       // level selected in the main menu
     GameState state;
     sf::Clock gameClock;
     sf::Time elapsed;

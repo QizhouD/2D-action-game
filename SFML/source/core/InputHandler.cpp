@@ -13,7 +13,8 @@ InputHandler::InputHandler()
 std::shared_ptr<Command> InputHandler::handleInput(const Window& window)
 {
     // Edge-triggered: one toggle per key press, however long the key is held.
-    if (window.wasKeyPressed(sf::Keyboard::Escape))
+    // Gamepad Start (button 7) pauses too.
+    if (window.wasKeyPressed(sf::Keyboard::Escape) || window.wasJoyButtonPressed(7))
     {
         return pauseCommand;
     }
@@ -57,6 +58,18 @@ std::vector<std::shared_ptr<Command>>& PlayerInputHandler::handleInput(const Win
     // Commands common to both modes
     if (window.isKeyDown(sf::Keyboard::Space)) commandQueue.push_back(attackCommand);
     if (window.isKeyDown(sf::Keyboard::LShift)) commandQueue.push_back(shoutCommand);
+
+    // Gamepad (XInput-style layout): left stick / d-pad move, A attacks, B or X shouts.
+    if (window.isJoystickConnected()) {
+        const sf::Vector2f joy = window.getJoyDirection();
+        const float threshold = 0.4f;
+        if (joy.y < -threshold) commandQueue.push_back(moveUpCommand);
+        if (joy.y >  threshold) commandQueue.push_back(moveDownCommand);
+        if (joy.x < -threshold) commandQueue.push_back(moveLeftCommand);
+        if (joy.x >  threshold) commandQueue.push_back(moveRightCommand);
+        if (window.isJoyButtonDown(0)) commandQueue.push_back(attackCommand);
+        if (window.isJoyButtonDown(1) || window.isJoyButtonDown(2)) commandQueue.push_back(shoutCommand);
+    }
 
     return commandQueue;
 }

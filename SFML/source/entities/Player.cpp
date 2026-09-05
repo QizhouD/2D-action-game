@@ -16,6 +16,7 @@ const float Player::shootCooldownTime = 0.5f;
 const int   Player::axeDamage = 15;
 const float Player::axeReach = 48.f;
 const float Player::invulnerableTime = 1.0f;
+const float Player::inputBufferTime = 0.15f;
 
 Player::Player()
     : Entity(EntityType::PLAYER),
@@ -73,6 +74,9 @@ void Player::onLevelStart() {
     dead = false;
     invulnTimer = 0.f;
     shootCooldown = 0.f;
+    buffered = Buffered::None;
+    bufferTimer = 0.f;
+    facing = { 1.f, 0.f };
     hitThisSwing.clear();
     velocity->setVelocity(0.f, 0.f);
     spriteSheet.getSprite().setColor(sf::Color::White);
@@ -80,7 +84,12 @@ void Player::onLevelStart() {
 }
 
 void Player::startAttack() {
-    if (isBusy() || dead) return;
+    if (dead) return;
+    if (isBusy()) {
+        buffered = Buffered::Attack;
+        bufferTimer = inputBufferTime;
+        return;
+    }
     attacking = true;
     hitThisSwing.clear();
     spriteSheet.setAnimation("Attack", true, false, /*restart=*/true);
@@ -88,8 +97,13 @@ void Player::startAttack() {
 }
 
 void Player::startShout() {
-    if (isBusy() || dead) return;
-    if (wood < shootingCost || shootCooldown > 0.f) return;
+    if (dead) return;
+    if (wood < shootingCost) return;
+    if (isBusy() || shootCooldown > 0.f) {
+        buffered = Buffered::Shout;
+        bufferTimer = inputBufferTime;
+        return;
+    }
     shouting = true;
     fireSpawnedThisShout = false;
     spriteSheet.setAnimation("Shout", true, false, /*restart=*/true);
@@ -117,6 +131,13 @@ bool Player::isDeathAnimationDone() const {
 
 void Player::updateMovementAnimation() {
     const sf::Vector2f vel = velocity->getVelocity();
+
+    // Remember the dominant movement axis for aiming.
+    if (vel.x != 0.f || vel.y != 0.f) {
+        if (std::abs(vel.x) >= std::abs(vel.y)) facing = { vel.x > 0.f ? 1.f : -1.f, 0.f };
+        else                                    facing = { 0.f, vel.y > 0.f ? 1.f : -1.f };
+    }
+
     if (vel.x > 0.f) {
         spriteSheet.setAnimation("Walk", true, true);
         spriteSheet.setSpriteDirection(Direction::Right);
@@ -149,6 +170,22 @@ void Player::update(Game* game, float elapsed) {
     if (isBusy() && anim && !anim->isPlaying()) {
         attacking = false;
         shouting = false;
+    }
+
+    // Fire a buffered action as soon as we are free (or drop it when stale).
+    if (buffered != Buffered::None) {
+        bufferTimer -= elapsed;
+        if (bufferTimer <= 0.f) {
+            buffered = Buffered::None;
+        }
+        else if (!isBusy()) {
+            const Buffered b = buffered;
+            buffered = Buffered::None;
+            if (b == Buffered::Attack) startAttack();
+            else if (shootCooldown <= 0.f) startShout();
+            else { buffered = b; }            // still cooling down: keep waiting
+            anim = spriteSheet.getCurrentAnim();
+        }
     }
 
     // Spawn the fireball once, on the shout's action frames.
@@ -239,17 +276,14 @@ std::shared_ptr<Fire> Player::createFire() const {
     auto fireEntity = std::make_shared<Fire>();
     fireEntity->init("img/Fire.png", 1.f);
 
-    // Centre the fireball on the player's hitbox and push it out of the body
-    // so it does not immediately clip the wall the player is leaning on.
+    // Centre the fireball on the player's hitbox, nudged towards the aim
+    // direction so it starts in front of the body. Aim follows the last
+    // movement direction (4-way); the sprite only faces left/right.
     const sf::Vector2f c = getCenter();
     const sf::Vector2f fireSize = fireEntity->getSpriteSize();
-    const float dir = (spriteSheet.getSpriteDirection() == Direction::Left) ? -1.f : 1.f;
-    fireEntity->setPosition(c.x - fireSize.x * 0.5f + dir * hitboxLocal.width * 0.5f,
-                            c.y - fireSize.y * 0.5f);
-
-    if (auto fireVel = fireEntity->getVelocityComp()) {
-        fireVel->setVelocity(dir, 0.f);
-    }
+    fireEntity->setPosition(c.x - fireSize.x * 0.5f + facing.x * hitboxLocal.width * 0.5f,
+                            c.y - fireSize.y * 0.5f + facing.y * hitboxLocal.height * 0.5f);
+    fireEntity->setDirection(facing);
     return fireEntity;
 }
 

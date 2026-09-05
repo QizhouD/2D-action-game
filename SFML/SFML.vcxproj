@@ -153,6 +153,8 @@
     <ClCompile Include="source\graphics\AnimBase.cpp" />
     <ClCompile Include="source\graphics\AnimDirectional.cpp" />
     <ClCompile Include="source\graphics\Hud.cpp" />
+    <ClCompile Include="source\graphics\ParticleSystem.cpp" />
+    <ClCompile Include="source\core\SaveData.cpp" />
     <ClCompile Include="source\graphics\SpriteSheet.cpp" />
     <ClCompile Include="source\graphics\SpriteSheetGraphicsComponent.cpp" />
     <ClCompile Include="source\graphics\Window.cpp" />
@@ -193,6 +195,8 @@
     <ClInclude Include="include\graphics\AnimBase.h" />
     <ClInclude Include="include\graphics\AnimDirectional.h" />
     <ClInclude Include="include\graphics\Hud.h" />
+    <ClInclude Include="include\graphics\ParticleSystem.h" />
+    <ClInclude Include="include\core\SaveData.h" />
     <ClInclude Include="include\graphics\SpriteSheet.h" />
     <ClInclude Include="include\graphics\TileTexture.h" />
     <ClInclude Include="include\graphics\Window.h" />

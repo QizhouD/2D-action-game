@@ -155,17 +155,29 @@ void Hud::drawOverlay(Window& window, const Game& game)
     const sf::Color prompt = blink ? sf::Color(255, 240, 180) : sf::Color(255, 240, 180, 120);
 
     switch (game.getState()) {
-    case GameState::MainMenu:
+    case GameState::MainMenu: {
         drawDim(window, logical, 170);
-        drawText(window, "DWARF & FIRE", cx, logical.y * 0.16f, titleSize, sf::Color(255, 200, 80), true);
-        drawText(window, "A tiny action game", cx, logical.y * 0.16f + 140.f, subtitleSize, sf::Color(220, 220, 220), true);
-        drawText(window, "WASD / Arrows  -  move    (Tab toggles scheme)", cx, logical.y * 0.42f, hudSize, sf::Color::White, true);
-        drawText(window, "Space  -  swing axe: chop logs, hit enemies", cx, logical.y * 0.42f + 50.f, hudSize, sf::Color::White, true);
-        drawText(window, "Left Shift  -  spend 1 wood to throw a fireball", cx, logical.y * 0.42f + 100.f, hudSize, sf::Color::White, true);
-        drawText(window, "Kill every mushroom, then step on the golden exit", cx, logical.y * 0.42f + 150.f, hudSize, sf::Color(255, 220, 160), true);
-        drawText(window, "Esc pause   F1 debug   F5 fullscreen", cx, logical.y * 0.42f + 200.f, hudSize, sf::Color(170, 170, 170), true);
-        drawText(window, "Press ENTER to start", cx, logical.y * 0.78f, subtitleSize, prompt, true);
+        drawText(window, "DWARF & FIRE", cx, logical.y * 0.14f, titleSize, sf::Color(255, 200, 80), true);
+        drawText(window, "A tiny action game", cx, logical.y * 0.14f + 140.f, subtitleSize, sf::Color(220, 220, 220), true);
+        const float y0 = logical.y * 0.40f;
+        drawText(window, "WASD / Arrows / gamepad  -  move    (Tab toggles keys)", cx, y0, hudSize, sf::Color::White, true);
+        drawText(window, "Space / A  -  swing axe: chop logs, hit enemies", cx, y0 + 50.f, hudSize, sf::Color::White, true);
+        drawText(window, "Left Shift / B  -  spend 1 wood to throw a fireball (aims where you last walked)", cx, y0 + 100.f, hudSize, sf::Color::White, true);
+        drawText(window, "Kill every mushroom, then step on the golden exit", cx, y0 + 150.f, hudSize, sf::Color(255, 220, 160), true);
+        drawText(window, "Esc pause   M sound   F1 debug   F5 fullscreen", cx, y0 + 200.f, hudSize, sf::Color(170, 170, 170), true);
+
+        // Level select + records.
+        const int unlocked = game.getLevelsUnlocked();
+        std::string levelLine = "Start at level  " + std::to_string(game.getMenuLevel() + 1) + " / " + std::to_string(game.getLevelCount());
+        if (unlocked > 1) levelLine = "<  " + levelLine + "  >";
+        drawText(window, levelLine, cx, logical.y * 0.70f, subtitleSize, sf::Color(200, 230, 255), true);
+        if (unlocked > 1) drawText(window, "Left / Right to choose an unlocked level", cx, logical.y * 0.70f + 58.f, hudSize, sf::Color(150, 170, 190), true);
+        drawText(window, "Best score  " + std::to_string(game.getHighScore()), cx, logical.y * 0.70f + 100.f, hudSize, sf::Color(200, 255, 200), true);
+        if (game.isMuted()) drawText(window, "(sound off)", logical.x - 120.f, logical.y - 50.f, hudSize, sf::Color(150, 150, 150), true);
+
+        drawText(window, "Press ENTER to start", cx, logical.y * 0.86f, subtitleSize, prompt, true);
         break;
+    }
 
     case GameState::Paused:
         drawDim(window, logical, 140);
@@ -173,6 +185,7 @@ void Hud::drawOverlay(Window& window, const Game& game)
         drawText(window, "Esc  resume", cx, logical.y * 0.3f + 170.f, subtitleSize, sf::Color::White, true);
         drawText(window, "R  restart level", cx, logical.y * 0.3f + 230.f, subtitleSize, sf::Color::White, true);
         drawText(window, "Q  quit to menu", cx, logical.y * 0.3f + 290.f, subtitleSize, sf::Color::White, true);
+        drawText(window, game.isMuted() ? "M  sound: off" : "M  sound: on", cx, logical.y * 0.3f + 350.f, hudSize, sf::Color(170, 170, 170), true);
         break;
 
     case GameState::LevelClear:
@@ -186,7 +199,8 @@ void Hud::drawOverlay(Window& window, const Game& game)
     case GameState::GameOver:
         drawDim(window, logical, 180);
         drawText(window, "YOU DIED", cx, logical.y * 0.28f, titleSize, sf::Color(255, 70, 70), true);
-        drawText(window, "Score " + std::to_string(game.getScore()) + "    Kills " + std::to_string(game.getKills()),
+        drawText(window, "Score " + std::to_string(game.getScore()) + "    Kills " + std::to_string(game.getKills())
+                 + "    Best " + std::to_string(game.getHighScore()),
                  cx, logical.y * 0.28f + 170.f, subtitleSize, sf::Color::White, true);
         drawText(window, "R  retry level", cx, logical.y * 0.66f, subtitleSize, prompt, true);
         drawText(window, "ENTER  back to menu", cx, logical.y * 0.66f + 60.f, subtitleSize, sf::Color(200, 200, 200), true);
@@ -196,7 +210,8 @@ void Hud::drawOverlay(Window& window, const Game& game)
         drawDim(window, logical, 170);
         drawText(window, "VICTORY!", cx, logical.y * 0.26f, titleSize, sf::Color(255, 230, 90), true);
         drawText(window, "The Mushroom King is no more.", cx, logical.y * 0.26f + 160.f, subtitleSize, sf::Color::White, true);
-        drawText(window, "Final score " + std::to_string(game.getScore()) + "    Kills " + std::to_string(game.getKills()),
+        drawText(window, "Final score " + std::to_string(game.getScore()) + "    Kills " + std::to_string(game.getKills())
+                 + "    Best " + std::to_string(game.getHighScore()),
                  cx, logical.y * 0.26f + 230.f, subtitleSize, sf::Color(200, 255, 200), true);
         drawText(window, "Press ENTER to return to the menu", cx, logical.y * 0.74f, subtitleSize, prompt, true);
         break;
