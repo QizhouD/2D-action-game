@@ -20,6 +20,9 @@ public:
 class PlayerInputComponent : public InputComponent {
 public:
     PlayerInputComponent();
+    // Defined in the .cpp where PlayerInputHandler is a complete type
+    // (required for std::unique_ptr to a forward-declared class).
+    ~PlayerInputComponent() override;
     virtual void update(Game& game) override;
 
 private:

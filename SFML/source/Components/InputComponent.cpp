@@ -9,6 +9,8 @@ PlayerInputComponent::PlayerInputComponent()
     inputHandler = std::make_unique<PlayerInputHandler>();
 }
 
+PlayerInputComponent::~PlayerInputComponent() = default;
+
 void PlayerInputComponent::update(Game& game)
 {
     auto player = game.getPlayer();

@@ -6,6 +6,7 @@
 #include "../../include/core/InputHandler.h"
 #include <algorithm>
 #include <sstream>
+#include <stdexcept>
 #include "../../include/systems/Systems.h"
 #include "../../include/utils/Observer.h"
 #include "../../include/core/AudioManager.h"
@@ -70,7 +71,7 @@ Game::~Game() {}
 void Game::init(std::vector<std::string> lines)
 {
     size_t h = lines.size();
-    if (h == 0) throw std::exception("No data in level file");
+    if (h == 0) throw std::runtime_error("No data in level file");
     size_t w = static_cast<size_t>(-1);
 
     window.loadFont("font/AmaticSC-Regular.ttf");
