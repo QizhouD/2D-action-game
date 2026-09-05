@@ -1,35 +1,26 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <fstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 #include "include/core/Game.h"
 
-namespace {
-
-std::vector<std::string> readLevelFile(const std::string& path)
-{
-    std::ifstream in{ path };
-    if (!in) {
-        throw std::runtime_error("Level file not found: " + path);
-    }
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(in, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (!line.empty()) lines.push_back(line);
-    }
-    return lines;
-}
-
-} // namespace
-
-int main(int /*argc*/, char** /*argv*/)
+int main(int argc, char** argv)
 {
     try {
+        // --levels <list.txt>: alternative level list (level files are resolved
+        //                      relative to the list's directory)
+        // --script <file>:     drive the game from a key/screenshot script (see Window.h)
+        std::string levelList = "levels/levels.txt";
+        std::string script;
+        for (int i = 1; i + 1 < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--levels")      levelList = argv[++i];
+            else if (arg == "--script") script = argv[++i];
+        }
+
         Game game;
-        game.init(readLevelFile("levels/lvl0.txt"));
+        game.init(levelList);
+        if (!script.empty()) game.getWindow()->loadScript(script);
 
         // Fixed-timestep simulation (60 Hz) with variable-rate rendering.
         const float dt = 1.f / 60.f;

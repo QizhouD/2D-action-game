@@ -14,12 +14,18 @@ public:
     ~Fire();
 
     void update(Game* game, float elapsed = 1.0f) override;
+    // Fireballs burst on walls.
+    void onWallHit() override { deleteEntity(); }
+
+    int getDamage() const { return damage; }
+    void setDamage(int d) { damage = d; }
 
     int getTTL() const { return ttl ? ttl->getTTL() : 0; }
     std::shared_ptr<VelocityComponent> getVelocityComp() const { return velocity; }
     std::shared_ptr<TTLComponent> getTTLComponent() const override;
 
 private:
+    int damage = 30;
     std::shared_ptr<TTLComponent> ttl;
     std::shared_ptr<VelocityComponent> velocity;
 };

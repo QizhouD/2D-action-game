@@ -5,7 +5,9 @@
 #include "../../include/components/PositionComponent.h"
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include "../../include/utils/Bitmask.h"
 
 using EntityID = unsigned int;
@@ -18,7 +20,8 @@ enum class EntityType {
     PLAYER = 0,
     POTION = 1,
     LOG = 2,
-    FIRE = 3
+    FIRE = 3,
+    ENEMY = 4
 };
 
 class Entity {
@@ -41,8 +44,23 @@ public:
 
     sf::Vector2i getTextureSize() const;
     sf::Vector2f getSpriteScale() const;
+    // Full sprite size in world pixels (texture * scale).
+    sf::Vector2f getSpriteSize() const { return bboxSize; }
+    sf::Vector2f getCenter() const;
 
+    // --- Collision -------------------------------------------------------
+    // The hitbox is a rectangle relative to the sprite's top-left corner. By
+    // default it covers the whole sprite; entities can shrink it (setHitbox).
+    void setHitbox(float offX, float offY, float w, float h) { hitboxLocal = { offX, offY, w, h }; }
+    const sf::FloatRect& getHitboxLocal() const { return hitboxLocal; }
+    Rectangle hitboxAt(float x, float y) const;
     Rectangle& getBoundingBox() { return boundingBox; }
+
+    // Whether MovementSystem should stop this entity at WALL tiles.
+    virtual bool blocksOnWalls() const { return true; }
+    // Called by MovementSystem when a move was rejected by a wall.
+    virtual void onWallHit() {}
+
     const SpriteSheet* getSpriteSheet() const { return &spriteSheet; }
     EntityType getEntityType() const { return type; }
 
@@ -75,11 +93,14 @@ public:
     virtual std::shared_ptr<TTLComponent> getTTLComponent() const { return nullptr; }
 
 protected:
+    void refreshBoundingBox();
+
     EntityType type;
     EntityID id;
     std::shared_ptr<PositionComponent> positionComp;
     Rectangle boundingBox;
     sf::Vector2f bboxSize;
+    sf::FloatRect hitboxLocal;
     bool isSpriteSheet;
     SpriteSheet spriteSheet;
     sf::Texture texture;

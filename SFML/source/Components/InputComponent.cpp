@@ -23,10 +23,10 @@ void PlayerInputComponent::update(Game& game)
     // Movement is rebuilt from scratch every tick.
     velComp->setVelocity(0.f, 0.f);
 
-    // Ignore the keyboard while the window is in the background.
-    if (!game.getWindow()->hasFocus()) { return; }
+    // No control while dead, or while the window is in the background.
+    if (player->isDead() || !game.getWindow()->hasFocus()) { return; }
 
-    auto& commands = inputHandler->handleInput();
+    auto& commands = inputHandler->handleInput(*game.getWindow());
     for (auto& cmd : commands) {
         cmd->execute(game);
     }

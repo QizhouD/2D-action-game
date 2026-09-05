@@ -36,14 +36,17 @@ set(GAME_SOURCES
     ${GAME_ROOT}/source/core/GameCommand.cpp
     ${GAME_ROOT}/source/core/InputHandler.cpp
     ${GAME_ROOT}/source/core/Tile.cpp
+    ${GAME_ROOT}/source/entities/Enemy.cpp
     ${GAME_ROOT}/source/entities/Entity.cpp
     ${GAME_ROOT}/source/entities/Fire.cpp
     ${GAME_ROOT}/source/entities/Player.cpp
     ${GAME_ROOT}/source/graphics/AnimBase.cpp
     ${GAME_ROOT}/source/graphics/AnimDirectional.cpp
+    ${GAME_ROOT}/source/graphics/Hud.cpp
     ${GAME_ROOT}/source/graphics/SpriteSheet.cpp
     ${GAME_ROOT}/source/graphics/SpriteSheetGraphicsComponent.cpp
     ${GAME_ROOT}/source/graphics/Window.cpp
+    ${GAME_ROOT}/source/systems/AISystem.cpp
     ${GAME_ROOT}/source/systems/ColliderSystem.cpp
     ${GAME_ROOT}/source/systems/GraphicsSystem.cpp
     ${GAME_ROOT}/source/systems/InputSystem.cpp

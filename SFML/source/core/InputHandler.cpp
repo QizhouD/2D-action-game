@@ -32,38 +32,31 @@ PlayerInputHandler::PlayerInputHandler()
     inputMode = InputMode::WASD; // Default to WASD
 }
 
-std::vector<std::shared_ptr<Command>>& PlayerInputHandler::handleInput()
+std::vector<std::shared_ptr<Command>>& PlayerInputHandler::handleInput(const Window& window)
 {
     commandQueue.clear();
 
-    //Toggle input mode using Enter key (with debounce)
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
-        if (!togglePressed) {
-            toggleInputMode();
-            togglePressed = true;
-        }
-    }
-    else {
-        togglePressed = false;
+    // Toggle input mode with Tab (edge-triggered). Enter is reserved for menus.
+    if (window.wasKeyPressed(sf::Keyboard::Tab)) {
+        toggleInputMode();
     }
 
     if (inputMode == InputMode::WASD) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) commandQueue.push_back(moveUpCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) commandQueue.push_back(moveLeftCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) commandQueue.push_back(moveDownCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) commandQueue.push_back(moveRightCommand);
+        if (window.isKeyDown(sf::Keyboard::W)) commandQueue.push_back(moveUpCommand);
+        if (window.isKeyDown(sf::Keyboard::A)) commandQueue.push_back(moveLeftCommand);
+        if (window.isKeyDown(sf::Keyboard::S)) commandQueue.push_back(moveDownCommand);
+        if (window.isKeyDown(sf::Keyboard::D)) commandQueue.push_back(moveRightCommand);
     }
     else if (inputMode == InputMode::ARROWS) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) commandQueue.push_back(moveUpCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) commandQueue.push_back(moveLeftCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) commandQueue.push_back(moveDownCommand);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) commandQueue.push_back(moveRightCommand);
+        if (window.isKeyDown(sf::Keyboard::Up)) commandQueue.push_back(moveUpCommand);
+        if (window.isKeyDown(sf::Keyboard::Left)) commandQueue.push_back(moveLeftCommand);
+        if (window.isKeyDown(sf::Keyboard::Down)) commandQueue.push_back(moveDownCommand);
+        if (window.isKeyDown(sf::Keyboard::Right)) commandQueue.push_back(moveRightCommand);
     }
 
     // Commands common to both modes
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) commandQueue.push_back(attackCommand); //attack command
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) commandQueue.push_back(shoutCommand); //shout command
-
+    if (window.isKeyDown(sf::Keyboard::Space)) commandQueue.push_back(attackCommand);
+    if (window.isKeyDown(sf::Keyboard::LShift)) commandQueue.push_back(shoutCommand);
 
     return commandQueue;
 }

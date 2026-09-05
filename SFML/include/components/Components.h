@@ -10,6 +10,7 @@ enum class ComponentID
     HEALTH,
     LOGIC,
     TTL,
+    AI,
     COUNT
 };
 

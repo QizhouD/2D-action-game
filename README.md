@@ -47,8 +47,16 @@ The original project expects SFML 2.5.1 (static, x64) at `D:\SFML\SFML-2.5.1`. A
 
 | Key | Action |
 | --- | --- |
-| `W A S D` / arrow keys | Move (`Enter` toggles between the two schemes) |
-| `Space` | Axe attack — chop logs to collect wood |
+| `W A S D` / arrow keys | Move (`Tab` toggles between the two schemes) |
+| `Space` | Axe attack — chop logs to collect wood, hit enemies |
 | `Left Shift` | Shout — spend 1 wood to launch a fireball |
-| `Esc` | Pause |
+| `Enter` | Confirm in menus (start / next level) |
+| `Esc` | Pause / resume (`R` restart level, `Q` back to menu while paused) |
+| `F1` | Toggle debug bounding boxes |
 | `F5` | Toggle fullscreen |
+
+Goal: kill every mushroom on the level, then step on the golden exit circle. Three levels; the last one has a boss.
+
+### Scripted runs (automation / regression)
+
+`MiniGame.exe --script <file>` replaces the keyboard with a timed script and can dump frames to PNG without needing window focus (see the comment block in `SFML/include/graphics/Window.h` for the format).

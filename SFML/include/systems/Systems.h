@@ -33,9 +33,19 @@ public:
     void update(Game* game, Entity* entity, float elapsed) override;
 };
 
+// Integrates velocity into position. Entities that blocksOnWalls() are moved
+// one axis at a time and stopped (sliding along) at WALL tiles / map edges.
 class MovementSystem : public System {
 public:
     MovementSystem();
+    void update(Game* game, Entity* entity, float elapsed) override;
+};
+
+// Drives entities with an AIComponent: patrol randomly, chase the player
+// when in range. Writes a unit direction into the VelocityComponent.
+class AISystem : public System {
+public:
+    AISystem();
     void update(Game* game, Entity* entity, float elapsed) override;
 };
 

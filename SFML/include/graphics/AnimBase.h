@@ -15,7 +15,7 @@ public:
 	void setLooping(bool l) { loop = l; }
 	void setName(const std::string& n) { name = n; }
  	void setFrame(int fr);
-	bool isInAction();
+	bool isInAction() const;
 	bool isPlaying() const { return playing; }
 	bool isLooping() const { return loop; }
 

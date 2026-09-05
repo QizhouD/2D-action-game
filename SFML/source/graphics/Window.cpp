@@ -1,8 +1,31 @@
 #include "../../include/graphics/Window.h"
-#include "../../include/core/Game.h"
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
+
+namespace {
+    sf::Keyboard::Key keyFromName(const std::string& name)
+    {
+        static const std::unordered_map<std::string, sf::Keyboard::Key> named = {
+            { "Enter", sf::Keyboard::Enter }, { "Escape", sf::Keyboard::Escape }, { "Esc", sf::Keyboard::Escape },
+            { "Space", sf::Keyboard::Space }, { "LShift", sf::Keyboard::LShift }, { "RShift", sf::Keyboard::RShift },
+            { "Up", sf::Keyboard::Up }, { "Down", sf::Keyboard::Down }, { "Left", sf::Keyboard::Left }, { "Right", sf::Keyboard::Right },
+            { "F1", sf::Keyboard::F1 }, { "F5", sf::Keyboard::F5 }, { "Tab", sf::Keyboard::Tab },
+        };
+        auto it = named.find(name);
+        if (it != named.end()) return it->second;
+        if (name.size() == 1 && name[0] >= 'A' && name[0] <= 'Z')
+            return static_cast<sf::Keyboard::Key>(sf::Keyboard::A + (name[0] - 'A'));
+        if (name.size() == 1 && name[0] >= 'a' && name[0] <= 'z')
+            return static_cast<sf::Keyboard::Key>(sf::Keyboard::A + (name[0] - 'a'));
+        if (name.size() == 4 && name.rfind("Num", 0) == 0 && name[3] >= '0' && name[3] <= '9')
+            return static_cast<sf::Keyboard::Key>(sf::Keyboard::Num0 + (name[3] - '0'));
+        return sf::Keyboard::Unknown;
+    }
+}
 
 Window::Window()
     : logicalSize({ 0, 0 })
@@ -22,23 +45,6 @@ void Window::loadFont(const std::string& fontFile)
     if (!guiFont.loadFromFile(fontFile)) {
         throw std::runtime_error("Font file not found for Window: " + fontFile);
     }
-
-    fpsText.setCharacterSize(fontSize);
-    fpsText.setFillColor(sf::Color::Red);
-    fpsText.setFont(guiFont);
-    fpsText.setPosition(10.f, 10.f);
-    fpsText.setString("FPS: --");
-
-    pausedText.setCharacterSize(fontSize + 10);
-    pausedText.setFillColor(sf::Color::Blue);
-    pausedText.setFont(guiFont);
-    pausedText.setString("PAUSED!");
-
-    healthText.setCharacterSize(fontSize);
-    healthText.setFillColor(sf::Color::Green);
-    healthText.setFont(guiFont);
-    healthText.setPosition(10.f, 60.f);
-    healthText.setString("Health: 100/100");
 }
 
 void Window::setup(const std::string& title, const sf::Vector2u& size)
@@ -46,6 +52,12 @@ void Window::setup(const std::string& title, const sf::Vector2u& size)
     windowTitle = title;
     logicalSize = size;
     create();
+}
+
+void Window::setLogicalSize(const sf::Vector2u& size)
+{
+    logicalSize = size;
+    applyView();
 }
 
 void Window::create()
@@ -72,16 +84,11 @@ void Window::create()
     window.setFramerateLimit(60);
     window.setKeyRepeatEnabled(false);
     applyView();
-
-    // Centre the pause banner in logical space.
-    const auto b = pausedText.getLocalBounds();
-    pausedText.setOrigin(b.left + b.width * 0.5f, b.top);
-    pausedText.setPosition(logicalSize.x * 0.5f, 10.f);
 }
 
 void Window::applyView()
 {
-    if (logicalSize.x == 0 || logicalSize.y == 0) return;
+    if (logicalSize.x == 0 || logicalSize.y == 0 || pixelSize.x == 0 || pixelSize.y == 0) return;
 
     sf::View view(sf::FloatRect(0.f, 0.f,
         static_cast<float>(logicalSize.x), static_cast<float>(logicalSize.y)));
@@ -108,6 +115,7 @@ void Window::destroy()
 void Window::pollEvents()
 {
     keysPressed.clear();
+    scriptTapped.clear();
 
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -116,6 +124,7 @@ void Window::pollEvents()
             isDone = true;
             break;
         case sf::Event::KeyPressed:
+            if (scripted) break;               // real keyboard is ignored while scripted
             if (event.key.code == sf::Keyboard::F5)
                 toggleFullscreen();
             else
@@ -135,11 +144,77 @@ void Window::pollEvents()
             break;
         }
     }
+
+    if (scripted) advanceScript();
 }
 
 bool Window::wasKeyPressed(sf::Keyboard::Key key) const
 {
     return std::find(keysPressed.begin(), keysPressed.end(), key) != keysPressed.end();
+}
+
+bool Window::isKeyDown(sf::Keyboard::Key key) const
+{
+    if (scripted) return scriptHeld.count(key) > 0 || scriptTapped.count(key) > 0;
+    return sf::Keyboard::isKeyPressed(key);
+}
+
+// ---------------------------------------------------------------------------
+// Scripted input
+// ---------------------------------------------------------------------------
+
+bool Window::loadScript(const std::string& file)
+{
+    std::ifstream in(file);
+    if (!in) {
+        std::cerr << "[Window] script not found: " << file << "\n";
+        return false;
+    }
+    script.clear();
+    std::string line;
+    while (std::getline(in, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream ss(line);
+        ScriptEvent ev;
+        if (!(ss >> ev.time >> ev.action)) continue;
+        ss >> ev.arg;
+        script.push_back(ev);
+    }
+    std::stable_sort(script.begin(), script.end(),
+        [](const ScriptEvent& a, const ScriptEvent& b) { return a.time < b.time; });
+    scriptPos = 0;
+    scripted = true;
+    scriptClock.restart();
+    std::cout << "[Window] running script " << file << " (" << script.size() << " events)\n";
+    return true;
+}
+
+void Window::advanceScript()
+{
+    const float now = scriptClock.getElapsedTime().asSeconds();
+    while (scriptPos < script.size() && script[scriptPos].time <= now) {
+        const ScriptEvent& ev = script[scriptPos++];
+        const sf::Keyboard::Key key = keyFromName(ev.arg);
+
+        if (ev.action == "down")       { scriptHeld.insert(key); keysPressed.push_back(key); }
+        else if (ev.action == "up")    { scriptHeld.erase(key); }
+        else if (ev.action == "press") { scriptTapped.insert(key); keysPressed.push_back(key); }
+        else if (ev.action == "shot")  { requestScreenshot(ev.arg); }
+        else if (ev.action == "quit")  { isDone = true; }
+        else std::cerr << "[Window] unknown script action: " << ev.action << "\n";
+    }
+}
+
+void Window::takeScreenshot(const std::string& file)
+{
+    sf::Texture tex;
+    if (!tex.create(window.getSize().x, window.getSize().y)) return;
+    tex.update(window);
+    if (tex.copyToImage().saveToFile(file))
+        std::cout << "[Window] screenshot saved: " << file << "\n";
+    else
+        std::cerr << "[Window] failed to save screenshot: " << file << "\n";
 }
 
 void Window::toggleFullscreen()
@@ -155,31 +230,19 @@ void Window::redraw()
 }
 
 void Window::beginDraw() { window.clear(sf::Color::Black); }
-void Window::endDraw() { window.display(); }
+
+void Window::endDraw()
+{
+    if (!pendingShot.empty()) {
+        // Capture the back buffer while it still holds the finished frame.
+        takeScreenshot(pendingShot);
+        pendingShot.clear();
+    }
+    window.display();
+}
 
 bool Window::isWindowDone() const { return isDone; }
 bool Window::isWindowFullscreen() const { return isFullscreen; }
-
-void Window::setFPS(int fps)
-{
-    fpsText.setString("FPS: " + std::to_string(fps));
-}
-
-void Window::drawGUI(const Game& game)
-{
-    window.draw(fpsText);
-    if (game.getPlayer()) {
-        auto playerHealth = game.getPlayer()->getHealthComp()->getHealth();
-        auto maxHealth = game.getPlayer()->getHealthComp()->getMaxHealth();
-        std::ostringstream ss;
-        ss << "Health: " << playerHealth << "/" << maxHealth;
-        healthText.setString(ss.str());
-        window.draw(healthText);
-    }
-    if (game.isPaused()) {
-        window.draw(pausedText);
-    }
-}
 
 void Window::draw(const sf::Drawable& drawable) {
     window.draw(drawable);

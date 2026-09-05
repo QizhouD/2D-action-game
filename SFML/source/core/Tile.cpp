@@ -1,6 +1,7 @@
 #include "../../include/core/Tile.h"
 #include "../../include/graphics/Window.h"
 #include "../../include/graphics/TileTexture.h"
+#include <stdexcept>
 
 Tile::Tile(TileType t) : type(t) {}
 
@@ -15,6 +16,7 @@ void Tile::loadTile(int x, int y, float sc, std::shared_ptr<TileTexture> sharedT
     sprite.setScale(sc, sc);
 
     sf::Vector2u textSize = texture->getTexture().getSize();
+    worldSize = textSize.x * sc;
     float px = static_cast<float>(x * (textSize.x * sc));
     float py = static_cast<float>(y * (textSize.y * sc));
     sprite.setPosition(px, py);

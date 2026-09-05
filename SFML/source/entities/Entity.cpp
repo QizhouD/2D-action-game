@@ -9,12 +9,6 @@
 #include "../../include/utils/Bitmask.h"
 #include "../../include/components/TTLComponent.h"
 
-
-// Helper function to convert sf::Vector2f to your custom Vector2f type.
-inline Vector2f toCustom(const sf::Vector2f& sfv) {
-    return Vector2f(sfv.x, sfv.y);
-}
-
 Entity::Entity()
     : Entity(EntityType::UNDEFINED)
 {
@@ -37,9 +31,10 @@ void Entity::init(const std::string& textureFile, float scale) {
     }
     sprite.setTexture(texture);
     sprite.setScale(scale, scale);
-    // Calculate bounding box size based on texture size and sprite scale.
     bboxSize.x = texture.getSize().x * sprite.getScale().x;
     bboxSize.y = texture.getSize().y * sprite.getScale().y;
+    hitboxLocal = { 0.f, 0.f, bboxSize.x, bboxSize.y };
+    refreshBoundingBox();
 }
 
 void Entity::initSpriteSheet(const std::string& spriteSheetFile) {
@@ -48,10 +43,24 @@ void Entity::initSpriteSheet(const std::string& spriteSheetFile) {
     spriteSheet.setAnimation("Idle", true, true);
     bboxSize.x = spriteSheet.getSpriteSize().x * spriteSheet.getSpriteScale().x;
     bboxSize.y = spriteSheet.getSpriteSize().y * spriteSheet.getSpriteScale().y;
+    hitboxLocal = { 0.f, 0.f, bboxSize.x, bboxSize.y };
+    refreshBoundingBox();
+}
+
+Rectangle Entity::hitboxAt(float x, float y) const {
+    const float l = x + hitboxLocal.left;
+    const float t = y + hitboxLocal.top;
+    return Rectangle(Vector2f(l, t), Vector2f(l + hitboxLocal.width, t + hitboxLocal.height));
+}
+
+void Entity::refreshBoundingBox() {
+    const sf::Vector2f pos = positionComp->getPosition();
+    const Rectangle hb = hitboxAt(pos.x, pos.y);
+    boundingBox.setTopLeft(hb.getTopLeft());
+    boundingBox.setBottomRight(hb.getBottomRight());
 }
 
 void Entity::update(Game* /*game*/, float elapsed) {
-    // Retrieve the position from the PositionComponent.
     sf::Vector2f pos = positionComp->getPosition();
 
     if (isSpriteSheet) {
@@ -62,10 +71,7 @@ void Entity::update(Game* /*game*/, float elapsed) {
         sprite.setPosition(pos.x, pos.y);
     }
 
-    // Update the bounding box to reflect the new position.
-    boundingBox.setTopLeft(toCustom(pos));
-    sf::Vector2f bottomRightPos = { pos.x + bboxSize.x, pos.y + bboxSize.y };
-    boundingBox.setBottomRight(toCustom(bottomRightPos));
+    refreshBoundingBox();
 }
 
 void Entity::draw(Window* window) {
@@ -78,16 +84,22 @@ void Entity::draw(Window* window) {
 }
 
 void Entity::setPosition(float x, float y) {
-    // Update the position through the PositionComponent.
     positionComp->setPosition(x, y);
     if (isSpriteSheet)
         spriteSheet.getSprite().setPosition(x, y);
     else
         sprite.setPosition(x, y);
+    refreshBoundingBox();
 }
 
 sf::Vector2f Entity::getPosition() const {
     return positionComp->getPosition();
+}
+
+sf::Vector2f Entity::getCenter() const {
+    const sf::Vector2f pos = positionComp->getPosition();
+    return { pos.x + hitboxLocal.left + hitboxLocal.width * 0.5f,
+             pos.y + hitboxLocal.top + hitboxLocal.height * 0.5f };
 }
 
 sf::Vector2i Entity::getTextureSize() const {

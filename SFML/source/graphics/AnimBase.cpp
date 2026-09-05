@@ -23,7 +23,7 @@ void AnimBase::setFrame(int fr)
 		curFrame = fr;
 }
 
-bool AnimBase::isInAction()
+bool AnimBase::isInAction() const
 {
 	if (frameActionStart == -1 || frameActionEnd == -1)
 		return true;

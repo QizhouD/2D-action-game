@@ -3,6 +3,7 @@
 #include "../../include/components/HealthComponent.h"
 #include "../../include/components/VelocityComponent.h"
 #include <memory>
+#include <set>
 #include "../../include/utils/Observer.h"
 
 class InputComponent;
@@ -16,12 +17,33 @@ public:
     static const float playerSpeed;       // pixels per second
     static const int   shootingCost;      // wood per fireball
     static const float shootCooldownTime; // seconds between fireballs
+    static const int   axeDamage;         // per hit on an enemy
+    static const float invulnerableTime;  // seconds of i-frames after being hit
 
     Player();
     ~Player() override;
 
+    // Body contact (called by Game when hitboxes overlap).
     void handlePotionCollision(Entity* potion);
-    void handleLogCollision(Entity* log);
+    void handleEnemyCollision(Entity* enemy);
+
+    // Axe: the swing has its own reach in front of the dwarf.
+    static const float axeReach;              // px beyond the body hitbox
+    bool isSwingActive() const;               // attack animation on its action frames
+    Rectangle getAttackBox() const;
+    void chopLog(Entity* log);                // once per log
+    void hitEnemy(Entity* enemy);             // once per enemy per swing
+
+    // Damage / death
+    bool takeDamage(int amount);              // returns true if damage was applied
+    bool isInvulnerable() const { return invulnTimer > 0.f; }
+    bool isDead() const { return dead; }
+    bool isDeathAnimationDone() const;
+
+    // Reset for a new game (health, wood, flags). Position is set separately.
+    void resetStats();
+    // Called when a new level starts: clears transient state, keeps HP/wood.
+    void onLevelStart();
 
     // Overridden initialization functions.
     void init(const std::string& textureFile, float scale) override;
@@ -59,6 +81,9 @@ private:
     bool attacking;
     bool shouting;
     bool fireSpawnedThisShout;
+    bool dead;
+    float invulnTimer;
+    std::set<EntityID> hitThisSwing;   // enemies already damaged by the current attack
     std::shared_ptr<HealthComponent> healthComp;
     int wood;
     float shootCooldown;

@@ -1,11 +1,13 @@
 #pragma once
 #include "../../include/graphics/Window.h"
+#include "../../include/graphics/Hud.h"
 #include "../../include/core/Board.h"
 #include "../../include/entities/Player.h"
 #include "Command.h"
 #include <memory>
 #include <vector>
 #include <string>
+#include <random>
 #include <SFML/System/Time.hpp>
 #include "../../include/systems/Systems.h"
 #include "../../include/utils/PackedArray.h"
@@ -16,10 +18,13 @@
 class InputHandler;
 class Player;
 class Entity;
+class Enemy;
 class System;
 
 using EntityID = unsigned int;
 enum class ECSType { BIG_ARRAY, ARCHETYPES, PACKED_ARRAY };
+enum class GameState { MainMenu, Playing, Paused, LevelClear, GameOver, Victory };
+
 class Archetype {
 public:
     std::vector<std::shared_ptr<Entity>> entities; // Entities sharing the same component structure
@@ -37,11 +42,9 @@ public:
     Game(ECSType type = ECSType::BIG_ARRAY);
     ~Game();
 
-    void init(std::vector<std::string> lines);
+    // Loads assets and the level list, shows the main menu.
+    void init(const std::string& levelListFile = "levels/levels.txt");
     void addEntity(std::shared_ptr<Entity> newEntity);
-
-    void buildBoard(size_t width, size_t height);
-    void initWindow(size_t width, size_t height);
 
     void handleInput();
     void update(float elapsed);
@@ -51,10 +54,24 @@ public:
 
     sf::Time getElapsed() const;
     void setFPS(int FPS);
-    void togglePause() { paused = !paused; }
-    bool isPaused() const { return paused; }
+
+    // --- State -------------------------------------------------------------
+    GameState getState() const { return state; }
+    void togglePause();
+    bool isPaused() const { return state == GameState::Paused; }
 
     std::shared_ptr<Player> getPlayer() const { return player; }
+    int getEnemiesAlive() const { return enemiesAlive; }
+    int getLevelIndex() const { return currentLevel; }
+    int getLevelCount() const { return static_cast<int>(levelFiles.size()); }
+    int getScore() const { return achievementObserver ? achievementObserver->getScore() : 0; }
+    int getKills() const { return achievementObserver ? achievementObserver->getKills() : 0; }
+
+    void pushToast(const std::string& text) { hud.pushToast(text); }
+
+    // Gameplay events
+    void onEnemyKilled(Enemy* enemy);
+    void spawnPotionAt(const sf::Vector2f& center);
 
     EntityID getIDCounter();
 
@@ -71,20 +88,39 @@ public:
     }
 
 private:
-    // Runs every system over every matching entity, once, using the selected ECS layout.
+    // --- Level flow --------------------------------------------------------
+    void loadLevelList(const std::string& file);
+    void loadLevel(int index);
+    void startNewGame();
+    void restartLevel();
+    void nextLevel();
+    void setState(GameState s);
+    // Centres an already-initialised entity inside tile (col,row).
+    void placeInTile(Entity& ent, int col, int row) const;
+
+    // --- Simulation --------------------------------------------------------
     void runSystems(float elapsed);
     void updateArchetypes(float elapsed);
     void bigArray(float elapsed);
     void updatePackedArray(float elapsed);
+    void handleCollisions();
+    void checkLevelProgress();
     void removeDeletedEntities();
     // Entities spawned during a frame are queued and inserted here, so that
     // spawning never invalidates a container that is being iterated.
     void flushPendingEntities();
 
     Window window;
-    bool paused;
+    Hud hud;
+    GameState state;
     sf::Clock gameClock;
     sf::Time elapsed;
+
+    std::vector<std::string> levelFiles;
+    int currentLevel;
+    int enemiesAlive;
+    int lastPlayerHealth;
+    float levelClearDelay;   // small pause between last kill and LevelClear when there is no exit
 
     std::unique_ptr<Board> board;
     std::vector<std::shared_ptr<Entity>> entities;
@@ -98,6 +134,8 @@ private:
     ECSType ecsType;
     std::vector<Archetype> archetypes;  // For Archetypes ECS
     PackedArray<Entity> packedEntities; // Packed storage
+
+    std::mt19937 rng;
 
     // Added Observer Pattern support
     std::shared_ptr<AchievementObserver> achievementObserver;

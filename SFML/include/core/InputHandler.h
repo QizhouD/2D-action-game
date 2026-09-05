@@ -25,7 +25,7 @@ class PlayerInputHandler
 {
 public:
     PlayerInputHandler();
-    std::vector<std::shared_ptr<Command>>& handleInput();
+    std::vector<std::shared_ptr<Command>>& handleInput(const Window& window);
     // Toggle between input modes
     void toggleInputMode();
     InputMode getInputMode() const;
@@ -44,7 +44,5 @@ private:
     // Command queue is cleared each frame
     std::vector<std::shared_ptr<Command>> commandQueue;
 
-    // Track input mode and toggle state
     InputMode inputMode;
-    bool togglePressed = false; // prevents mode toggle from firing repeatedly
 };

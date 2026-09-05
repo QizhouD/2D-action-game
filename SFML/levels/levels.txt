@@ -1,0 +1,10 @@
+# One level file per line, played in order. Lines starting with # are ignored.
+#
+# Tile legend used by the level files:
+#   w  wall          .  floor
+#   *  player start  o  exit (opens once every enemy is dead)
+#   x  log (wood)    p  potion (+10 HP)
+#   e  mushroom      B  Mushroom King (boss)
+lvl0.txt
+lvl1.txt
+lvl2.txt
