@@ -3,25 +3,9 @@
 #include "../../include/components/HealthComponent.h"
 #include "../../include/components/VelocityComponent.h"
 #include "../../include/components/AIComponent.h"
+#include "../../include/core/Balance.h"   // EnemyStats
 #include <memory>
 #include <string>
-
-// Tunable numbers for one kind of enemy.
-struct EnemyStats {
-    std::string name;
-    std::string texture;
-    float scale;          // sprite scale (texture is 50x50)
-    int   health;
-    float speed;          // px/s
-    int   contactDamage;  // dealt to the player on touch
-    float chaseRange;     // px
-    float potionDropChance; // 0..1
-    int   score;
-    float hitboxInset;    // fraction of the sprite trimmed on each side
-
-    static const EnemyStats& mushroom();
-    static const EnemyStats& bossMushroom();
-};
 
 class Enemy : public Entity {
 public:

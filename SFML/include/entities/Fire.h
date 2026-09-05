@@ -4,12 +4,9 @@
 #include "../../include/components/TTLComponent.h"
 #include "../../include/components/VelocityComponent.h"
 
+// Speed / lifetime / damage come from Balance::get().fire.
 class Fire : public Entity {
 public:
-    // Lifetime in simulation ticks (60 Hz) and travel speed in pixels per second.
-    static const int   startTimeToLive = 150;
-    static const float speed;
-
     Fire();
     ~Fire();
 
@@ -30,7 +27,7 @@ public:
     std::shared_ptr<TTLComponent> getTTLComponent() const override;
 
 private:
-    int damage = 30;
+    int damage;
     sf::Vector2f direction{ 1.f, 0.f };
     std::shared_ptr<TTLComponent> ttl;
     std::shared_ptr<VelocityComponent> velocity;

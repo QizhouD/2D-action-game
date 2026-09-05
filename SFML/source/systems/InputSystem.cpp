@@ -9,7 +9,7 @@ InputSystem::InputSystem() {
     componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::INPUT));
 }
 
-void InputSystem::update(Game* game, Entity* entity, float elapsed) {
+void InputSystem::update(Game* game, Entity* entity, float /*elapsed*/) {
     // Retrieve the InputComponent from the entity.
     // Using the entity's getComponent() function which returns a shared_ptr<Component>.
     std::shared_ptr<Component> comp = entity->getComponent(ComponentID::INPUT);

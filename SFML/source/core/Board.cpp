@@ -1,17 +1,14 @@
 #include "../../include/core/Board.h"
 #include "../../include/graphics/Window.h"
 #include "../../include/utils/Rectangle.h"
+#include "../../include/core/ResourceManager.h"
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
 
 Board::Board(size_t w, size_t h, float tileWorldSize)
     : width(w), height(h), tileSize(tileWorldSize) {
-    grid.resize(width * height, nullptr);
-}
-
-Board::~Board() {
-    for (auto* tile : grid) delete tile;
+    grid.resize(width * height);
 }
 
 bool Board::inBounds(int x, int y) const {
@@ -21,32 +18,13 @@ bool Board::inBounds(int x, int y) const {
 void Board::addTile(int x, int y, float scale, TileType type, const std::string& textureFile) {
     if (!inBounds(x, y)) throw std::runtime_error("addTile: out of bounds");
 
-    int idx = y * static_cast<int>(width) + x;
-    if (grid[idx]) {
-        if (grid[idx] == exitTile) exitTile = nullptr;
-        delete grid[idx];
-        grid[idx] = nullptr;
-    }
+    const size_t idx = static_cast<size_t>(y) * width + static_cast<size_t>(x);
+    if (grid[idx].get() == exitTile) exitTile = nullptr;
 
-    // Reuse or load texture
-    auto it = textureMap.find(textureFile);
-    std::shared_ptr<TileTexture> tex;
-
-    if (it != textureMap.end()) {
-        tex = it->second;
-    }
-    else {
-        tex = std::make_shared<TileTexture>();
-        if (!tex->loadFromFile(textureFile)) {
-            throw std::runtime_error("Texture load failed: " + textureFile);
-        }
-        textureMap[textureFile] = tex;
-    }
-
-    Tile* newTile = new Tile(type);
-    newTile->loadTile(x, y, scale, tex);
-    grid[idx] = newTile;
-    if (type == TileType::EXIT) exitTile = newTile;
+    auto newTile = std::make_unique<Tile>(type);
+    newTile->loadTile(x, y, scale, ResourceManager::get().texture(textureFile));
+    if (type == TileType::EXIT) exitTile = newTile.get();
+    grid[idx] = std::move(newTile);
 }
 
 const Tile* Board::tileAtWorld(float wx, float wy) const {
@@ -54,7 +32,7 @@ const Tile* Board::tileAtWorld(float wx, float wy) const {
     const int tx = static_cast<int>(wx / tileSize);
     const int ty = static_cast<int>(wy / tileSize);
     if (!inBounds(tx, ty)) return nullptr;
-    return grid[ty * static_cast<int>(width) + tx];
+    return grid[static_cast<size_t>(ty) * width + static_cast<size_t>(tx)].get();
 }
 
 bool Board::isWalkable(float wx, float wy) const {
@@ -83,12 +61,8 @@ bool Board::isOnActiveExit(const Rectangle& box) const {
 }
 
 void Board::draw(Window* wnd) {
-    for (int y = 0; y < static_cast<int>(height); y++) {
-        for (int x = 0; x < static_cast<int>(width); x++) {
-            Tile* tile = grid[y * static_cast<int>(width) + x];
-            if (tile) tile->draw(wnd);
-        }
-    }
+    for (auto& tile : grid)
+        if (tile) tile->draw(wnd);
 
     // Exit marker: grey ring while locked, pulsing gold once all enemies are gone.
     if (exitTile) {

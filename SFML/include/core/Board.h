@@ -1,17 +1,15 @@
 #pragma once
 #include <vector>
-#include <unordered_map>
+#include <string>
 #include <memory>
 #include <SFML/Graphics.hpp>
 #include "Tile.h"
-#include "../../include/graphics/TileTexture.h"
 
 class Rectangle;
 
 class Board {
 public:
     Board(size_t width, size_t height, float tileWorldSize);
-    ~Board();
 
     void addTile(int x, int y, float scale, TileType type, const std::string& textureFile);
     void draw(class Window* wnd);
@@ -40,11 +38,8 @@ public:
 private:
     size_t width, height;
     float tileSize;
-    std::vector<Tile*> grid;
-    Tile* exitTile = nullptr;
+    std::vector<std::unique_ptr<Tile>> grid;
+    Tile* exitTile = nullptr;   // points into grid
     bool exitActive = false;
     float animTime = 0.f;
-
-    // Flyweight storage
-    std::unordered_map<std::string, std::shared_ptr<TileTexture>> textureMap;
 };

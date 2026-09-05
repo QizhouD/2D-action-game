@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+env:
+  # Same combination documented in README.md / build.ps1.
+  GCC_URL: https://github.com/brechtsanders/winlibs_mingw/releases/download/13.1.0-16.0.5-11.0.0-msvcrt-r5/winlibs-x86_64-posix-seh-gcc-13.1.0-mingw-w64msvcrt-11.0.0-r5.zip
+  SFML_URL: https://github.com/SFML/SFML/releases/download/2.6.1/SFML-2.6.1-windows-gcc-13.1.0-mingw-64-bit.zip
+
+jobs:
+  windows-mingw:
+    name: Windows (MinGW-w64, static SFML)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache toolchain
+        id: toolchain-cache
+        uses: actions/cache@v4
+        with:
+          path: toolchain
+          key: toolchain-gcc13.1.0-sfml2.6.1-v1
+
+      - name: Download toolchain
+        if: steps.toolchain-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $tc = Join-Path $env:GITHUB_WORKSPACE "toolchain"
+          New-Item -ItemType Directory -Force $tc | Out-Null
+          Invoke-WebRequest $env:GCC_URL  -OutFile "$tc\gcc.zip"
+          Invoke-WebRequest $env:SFML_URL -OutFile "$tc\sfml.zip"
+          Expand-Archive "$tc\gcc.zip"  -DestinationPath $tc      # -> toolchain\mingw64
+          Expand-Archive "$tc\sfml.zip" -DestinationPath $tc      # -> toolchain\SFML-2.6.1
+          Remove-Item "$tc\gcc.zip", "$tc\sfml.zip"
+
+      - name: Install CMake + Ninja
+        run: pip install cmake ninja
+
+      - name: Build + unit tests
+        shell: pwsh
+        run: .\build.ps1 -Test -ToolchainDir "$env:GITHUB_WORKSPACE\toolchain"
+
+      - name: Scripted smoke run
+        # Boots the real game for a few seconds with scripted input and takes
+        # screenshots. Hosted runners only have a software GL context, so this
+        # is informational rather than blocking.
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          @"
+          0.5 press Enter
+          1.0 down D
+          2.0 up D
+          2.1 press Space
+          2.6 press LShift
+          3.0 shot smoke.png
+          3.3 quit
+          "@ | Set-Content smoke.txt
+          & .\build\MiniGame.exe --script smoke.txt
+          if (Test-Path .\build\smoke.png) { Copy-Item .\build\smoke.png . }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniGame-windows
+          if-no-files-found: ignore
+          path: |
+            build/MiniGame.exe
+            build/openal32.dll
+            build/audio
+            build/config
+            build/font
+            build/img
+            build/levels
+            smoke.png
+
+  linux-gcc:
+    name: Linux (GCC, system SFML)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build libsfml-dev
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DMINIGAME_SFML_STATIC=OFF
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure

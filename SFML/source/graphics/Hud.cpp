@@ -2,16 +2,22 @@
 #include "../../include/graphics/Window.h"
 #include "../../include/core/Game.h"
 #include "../../include/entities/Player.h"
+#include "../../include/core/ResourceManager.h"
 #include <algorithm>
+#include <iostream>
 #include <cmath>
 #include <sstream>
 
 void Hud::init(const sf::Font& f, const std::string& woodIconFile)
 {
     font = &f;
-    if (woodIcon.loadFromFile(woodIconFile)) {
-        woodSprite.setTexture(woodIcon);
+    try {
+        woodSprite.setTexture(ResourceManager::get().texture(woodIconFile), true);
         woodSprite.setScale(0.7f, 0.7f);
+    }
+    catch (const std::exception& e) {
+        // The HUD icon is cosmetic; keep running without it.
+        std::cerr << "Hud: " << e.what() << "\n";
     }
 }
 

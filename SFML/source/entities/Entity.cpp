@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include "../../include/utils/Bitmask.h"
 #include "../../include/components/TTLComponent.h"
+#include "../../include/core/ResourceManager.h"
 
 Entity::Entity()
     : Entity(EntityType::UNDEFINED)
@@ -26,13 +27,11 @@ Entity::Entity(EntityType et)
 Entity::~Entity() {}
 
 void Entity::init(const std::string& textureFile, float scale) {
-    if (!texture.loadFromFile(textureFile)) {
-        throw std::runtime_error("Entity texture not found: " + textureFile);
-    }
-    sprite.setTexture(texture);
+    texture = &ResourceManager::get().texture(textureFile);
+    sprite.setTexture(*texture, true);
     sprite.setScale(scale, scale);
-    bboxSize.x = texture.getSize().x * sprite.getScale().x;
-    bboxSize.y = texture.getSize().y * sprite.getScale().y;
+    bboxSize.x = texture->getSize().x * sprite.getScale().x;
+    bboxSize.y = texture->getSize().y * sprite.getScale().y;
     hitboxLocal = { 0.f, 0.f, bboxSize.x, bboxSize.y };
     refreshBoundingBox();
 }
@@ -105,7 +104,8 @@ sf::Vector2f Entity::getCenter() const {
 sf::Vector2i Entity::getTextureSize() const {
     if (isSpriteSheet)
         return spriteSheet.getSpriteSize();
-    return sf::Vector2i(texture.getSize().x, texture.getSize().y);
+    if (!texture) return { 0, 0 };
+    return sf::Vector2i(texture->getSize().x, texture->getSize().y);
 }
 
 sf::Vector2f Entity::getSpriteScale() const {

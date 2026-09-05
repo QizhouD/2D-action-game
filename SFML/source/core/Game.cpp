@@ -13,6 +13,8 @@
 #include "../../include/utils/Observer.h"
 #include "../../include/core/AudioManager.h"
 #include "../../include/core/ServiceLocator.h"
+#include "../../include/core/Balance.h"
+#include "../../include/core/LevelParser.h"
 
 void Game::registerCollisionCallback(EntityType type, std::function<void(Entity*)> callback) {
     collisionCallbacks[type] = callback;
@@ -20,14 +22,13 @@ void Game::registerCollisionCallback(EntityType type, std::function<void(Entity*
 
 std::shared_ptr<AudioManager> ServiceLocator::audioService = nullptr;
 
-Game::Game(ECSType type)
+Game::Game()
     : state(GameState::MainMenu)
     , currentLevel(0)
     , enemiesAlive(0)
     , lastPlayerHealth(0)
     , levelClearDelay(0.f)
     , entityCounter(1)
-    , ecsType(type)
     , rng(std::random_device{}())
 {
     inputHandler = std::make_unique<InputHandler>();
@@ -37,23 +38,7 @@ Game::Game(ECSType type)
     systems.push_back(std::make_shared<InputSystem>());
     systems.push_back(std::make_shared<AISystem>());
     systems.push_back(std::make_shared<MovementSystem>());
-    systems.push_back(std::make_shared<ColliderSystem>());
-    systems.push_back(std::make_shared<PrintDebugSystem>());
     systems.push_back(std::make_shared<TTLSystem>());
-
-    graphicsSystems.push_back(std::make_shared<GraphicsSystem>());
-
-    if (ecsType == ECSType::ARCHETYPES) {
-        Archetype movableEntities;
-        movableEntities.componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::VELOCITY));
-        movableEntities.componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::POSITION));
-
-        Archetype drawableEntities;
-        drawableEntities.componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::GRAPHICS));
-
-        archetypes.push_back(movableEntities);
-        archetypes.push_back(drawableEntities);
-    }
 }
 
 Game::~Game() {}
@@ -64,6 +49,14 @@ Game::~Game() {}
 
 void Game::init(const std::string& levelListFile)
 {
+    // Tuning overrides. Missing file = built-in defaults; bad lines are reported.
+    {
+        std::vector<std::string> warnings;
+        if (Balance::get().loadFromFile("config/balance.ini", &warnings)) {
+            for (const auto& w : warnings) std::cerr << "balance.ini " << w << "\n";
+        }
+    }
+
     window.loadFont("font/AmaticSC-Regular.ttf");
     window.setTitle("Dwarf & Fire");
     hud.init(window.getGUIFont(), "img/log.png");
@@ -121,20 +114,9 @@ void Game::recordProgress()
 
 void Game::loadLevelList(const std::string& file)
 {
-    levelFiles.clear();
-    // Level names are relative to the directory of the list file.
-    std::string dir;
-    const size_t slash = file.find_last_of("/\\");
-    if (slash != std::string::npos) dir = file.substr(0, slash + 1);
-
-    std::ifstream in(file);
-    std::string line;
-    while (std::getline(in, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty() || line[0] == '#') continue;
-        levelFiles.push_back(dir + line);
-    }
+    levelFiles = LevelParser::loadLevelList(file);
     if (levelFiles.empty()) {
+        std::cerr << "No levels listed in " << file << ", falling back to levels/lvl0.txt\n";
         levelFiles.push_back("levels/lvl0.txt");
     }
 }
@@ -157,91 +139,65 @@ void Game::loadLevel(int index)
         throw std::out_of_range("Level index out of range");
     currentLevel = index;
 
-    std::ifstream in(levelFiles[index]);
-    if (!in) throw std::runtime_error("Level file not found: " + levelFiles[index]);
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(in, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (!line.empty()) lines.push_back(line);
-    }
-    if (lines.empty()) throw std::runtime_error("No data in level file " + levelFiles[index]);
+    // Parsing/validation is separate from world construction so it can be
+    // unit tested and so a broken level fails before we tear down the old one.
+    const LevelData lvl = LevelParser::parseFile(levelFiles[index]);
 
     // Reset world state (the player object survives).
     entities.clear();
     pendingEntities.clear();
-    for (auto& a : archetypes) a.entities.clear();
-    packedEntities = PackedArray<Entity>();
     hud.clearToasts();
     enemiesAlive = 0;
     levelClearDelay = 0.f;
 
-    const size_t h = lines.size();
-    size_t w = 0;
-    for (const auto& l : lines) w = std::max(w, l.size());
-
     const float tile = spriteWH * tileScale;
-    board = std::make_unique<Board>(w, h, tile);
+    board = std::make_unique<Board>(lvl.width, lvl.height, tile);
     particles.clear();
 
-    const sf::Vector2u worldPx(static_cast<unsigned>(w * tile), static_cast<unsigned>(h * tile));
+    const sf::Vector2u worldPx(static_cast<unsigned>(lvl.width * tile), static_cast<unsigned>(lvl.height * tile));
     window.setWorld(worldPx);
     if (!window.isCreated()) window.setup("Dwarf & Fire", window.getLogicalSize());
 
-    bool playerPlaced = false;
-    int potions = 0;
-
-    for (int row = 0; row < static_cast<int>(h); ++row) {
-        for (int col = 0; col < static_cast<int>(w); ++col) {
-            const char c = col < static_cast<int>(lines[row].size()) ? lines[row][col] : 'w';
-            switch (c) {
-            case 'w':
-                board->addTile(col, row, tileScale, TileType::WALL, "img/wall.png");
-                continue;
-            case 'o':
-                board->addTile(col, row, tileScale, TileType::EXIT, "img/floor.png");
-                continue;
-            default:
-                board->addTile(col, row, tileScale, TileType::CORRIDOR, "img/floor.png");
-                break;
-            }
-
-            switch (c) {
-            case 'x':
-                addEntity(buildEntityAt<Log>("img/log.png", col, row));
-                break;
-            case 'p':
-                addEntity(buildEntityAt<Potion>("img/potion.png", col, row));
-                ++potions;
-                break;
-            case 'e':
-            case 'B': {
-                const EnemyStats& st = (c == 'B') ? EnemyStats::bossMushroom() : EnemyStats::mushroom();
-                auto enemy = std::make_shared<Enemy>(st);
-                enemy->init(st.texture, st.scale);
-                placeInTile(*enemy, col, row);
-                addEntity(enemy);
-                ++enemiesAlive;
-                break;
-            }
-            case '*':
-                player->positionSprite(row, col, spriteWH, tileScale);
-                playerPlaced = true;
-                break;
-            default:
-                break;
+    for (int row = 0; row < lvl.height; ++row) {
+        for (int col = 0; col < lvl.width; ++col) {
+            switch (lvl.at(col, row)) {
+            case 'w': board->addTile(col, row, tileScale, TileType::WALL,     "img/wall.png");  break;
+            case 'o': board->addTile(col, row, tileScale, TileType::EXIT,     "img/floor.png"); break;
+            default:  board->addTile(col, row, tileScale, TileType::CORRIDOR, "img/floor.png"); break;
             }
         }
     }
 
-    if (!playerPlaced) throw std::runtime_error("Level has no player start ('*'): " + levelFiles[index]);
+    for (const auto& s : lvl.spawns) {
+        switch (s.kind) {
+        case 'x':
+            addEntity(buildEntityAt<Log>("img/log.png", s.col, s.row));
+            break;
+        case 'p':
+            addEntity(buildEntityAt<Potion>("img/potion.png", s.col, s.row));
+            break;
+        case 'e':
+        case 'B': {
+            const EnemyStats& st = (s.kind == 'B') ? Balance::get().boss : Balance::get().mushroom;
+            auto enemy = std::make_shared<Enemy>(st);
+            enemy->init(st.texture, st.scale);
+            placeInTile(*enemy, s.col, s.row);
+            addEntity(enemy);
+            ++enemiesAlive;
+            break;
+        }
+        default:
+            break;
+        }
+    }
 
+    player->positionSprite(lvl.playerRow, lvl.playerCol, spriteWH, tileScale);
     player->onLevelStart();
     addEntity(player);
     flushPendingEntities();
     window.snapCamera(player->getCenter());
 
-    achievementObserver->startLevel(potions);
+    achievementObserver->startLevel(lvl.count('p'));
     lastPlayerHealth = player->getHealthComp()->getHealth();
     board->setExitActive(enemiesAlive == 0);
 }
@@ -306,20 +262,8 @@ void Game::addEntity(std::shared_ptr<Entity> newEntity)
 
 void Game::flushPendingEntities()
 {
-    for (auto& newEntity : pendingEntities) {
-        entities.push_back(newEntity);
-
-        if (ecsType == ECSType::ARCHETYPES) {
-            for (auto& archetype : archetypes) {
-                if (newEntity->hasComponent(archetype.componentMask)) {
-                    archetype.entities.push_back(newEntity);
-                }
-            }
-        }
-        else if (ecsType == ECSType::PACKED_ARRAY) {
-            packedEntities.insert(newEntity->getID(), newEntity);
-        }
-    }
+    for (auto& newEntity : pendingEntities)
+        entities.push_back(std::move(newEntity));
     pendingEntities.clear();
 }
 
@@ -520,41 +464,12 @@ void Game::checkLevelProgress()
 
 void Game::runSystems(float elapsed)
 {
-    switch (ecsType) {
-    case ECSType::ARCHETYPES:   updateArchetypes(elapsed);  break;
-    case ECSType::PACKED_ARRAY: updatePackedArray(elapsed); break;
-    case ECSType::BIG_ARRAY:
-    default:                    bigArray(elapsed);          break;
-    }
-}
-
-void Game::bigArray(float elapsed) {
+    // System-major order keeps each system's logic cache-friendly and makes
+    // the pipeline order (input -> AI -> movement -> TTL) explicit.
     for (const auto& sys : systems) {
         for (auto& ent : entities) {
-            if (sys->validate(ent.get())) {
+            if (sys->validate(ent.get()))
                 sys->update(this, ent.get(), elapsed);
-            }
-        }
-    }
-}
-
-void Game::updateArchetypes(float elapsed) {
-    for (auto& archetype : archetypes) {
-        for (auto& entity : archetype.entities) {
-            for (auto& sys : systems) {
-                if (sys->validate(entity.get()))
-                    sys->update(this, entity.get(), elapsed);
-            }
-        }
-    }
-}
-
-void Game::updatePackedArray(float elapsed) {
-    for (auto& sys : systems) {
-        for (auto& ent : packedEntities.getDense()) {
-            if (sys->validate(ent.get())) {
-                sys->update(this, ent.get(), elapsed);
-            }
         }
     }
 }
@@ -562,21 +477,6 @@ void Game::updatePackedArray(float elapsed) {
 void Game::removeDeletedEntities()
 {
     auto isDeleted = [](const std::shared_ptr<Entity>& e) { return e->isDeleted(); };
-
-    if (ecsType == ECSType::ARCHETYPES) {
-        for (auto& archetype : archetypes) {
-            archetype.entities.erase(
-                std::remove_if(archetype.entities.begin(), archetype.entities.end(), isDeleted),
-                archetype.entities.end());
-        }
-    }
-    else if (ecsType == ECSType::PACKED_ARRAY) {
-        for (auto& e : entities) {
-            if (e->isDeleted() && packedEntities.contains(e->getID()))
-                packedEntities.remove(e->getID());
-        }
-    }
-
     entities.erase(std::remove_if(entities.begin(), entities.end(), isDeleted), entities.end());
 }
 

@@ -2,17 +2,6 @@
 #include "../../include/core/Game.h"
 #include <algorithm>
 
-const EnemyStats& EnemyStats::mushroom() {
-    //                          name        texture                    scale hp  speed dmg range drop score inset
-    static const EnemyStats s{ "Mushroom", "img/mushroom50-50.png",   1.5f, 30,  70.f, 10, 400.f, 0.3f, 100, 0.12f };
-    return s;
-}
-
-const EnemyStats& EnemyStats::bossMushroom() {
-    static const EnemyStats s{ "Mushroom King", "img/mushroom50-50.png", 2.6f, 150, 50.f, 25, 700.f, 1.0f, 1000, 0.22f };
-    return s;
-}
-
 Enemy::Enemy(const EnemyStats& st)
     : Entity(EntityType::ENEMY), stats(st)
 {

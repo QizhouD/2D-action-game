@@ -48,21 +48,3 @@ public:
     AISystem();
     void update(Game* game, Entity* entity, float elapsed) override;
 };
-
-class GraphicsSystem : public System {
-public:
-    GraphicsSystem();
-    void update(Game* game, Entity* entity, float elapsed) override;
-};
-
-class ColliderSystem : public System {
-public:
-    ColliderSystem();
-    void update(Game* game, Entity* entity, float elapsed) override;
-};
-
-class PrintDebugSystem: public System{
-public:
-    PrintDebugSystem();
-    void update(Game* game, Entity* entity, float elapsed) override;
-};

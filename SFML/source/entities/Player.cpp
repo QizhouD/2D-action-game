@@ -9,14 +9,11 @@
 #include "../../include/components/InputComponent.h"
 #include "../../include/core/ServiceLocator.h"
 #include "../../include/entities/StaticEntities.h"
+#include "../../include/core/Balance.h"
 
-const float Player::playerSpeed = 150.f;
-const int   Player::shootingCost = 1;
-const float Player::shootCooldownTime = 0.5f;
-const int   Player::axeDamage = 15;
-const float Player::axeReach = 48.f;
-const float Player::invulnerableTime = 1.0f;
-const float Player::inputBufferTime = 0.15f;
+namespace {
+const Balance::PlayerStats& cfg() { return Balance::get().player; }
+}
 
 Player::Player()
     : Entity(EntityType::PLAYER),
@@ -29,13 +26,13 @@ Player::Player()
     shootCooldown(0)
 {
     // Direction comes from input; the component's speed factor scales it to px/s.
-    velocity = std::make_shared<VelocityComponent>(playerSpeed);
+    velocity = std::make_shared<VelocityComponent>(cfg().speed);
     addComponent(velocity);
 
     input = std::make_shared<PlayerInputComponent>();
     addComponent(input);
 
-    healthComp = std::make_shared<HealthComponent>(startingHealth, maxHealth);
+    healthComp = std::make_shared<HealthComponent>(cfg().startingHealth, cfg().maxHealth);
     addComponent(healthComp);
 }
 
@@ -64,7 +61,7 @@ std::shared_ptr<Observer> Player::getObserver() const {
 }
 
 void Player::resetStats() {
-    healthComp->changeHealth(startingHealth - healthComp->getHealth());
+    healthComp->changeHealth(cfg().startingHealth - healthComp->getHealth());
     wood = 0;
     onLevelStart();
 }
@@ -87,7 +84,7 @@ void Player::startAttack() {
     if (dead) return;
     if (isBusy()) {
         buffered = Buffered::Attack;
-        bufferTimer = inputBufferTime;
+        bufferTimer = cfg().inputBufferTime;
         return;
     }
     attacking = true;
@@ -98,10 +95,10 @@ void Player::startAttack() {
 
 void Player::startShout() {
     if (dead) return;
-    if (wood < shootingCost) return;
+    if (wood < cfg().shootingCost) return;
     if (isBusy() || shootCooldown > 0.f) {
         buffered = Buffered::Shout;
-        bufferTimer = inputBufferTime;
+        bufferTimer = cfg().inputBufferTime;
         return;
     }
     shouting = true;
@@ -112,7 +109,7 @@ void Player::startShout() {
 bool Player::takeDamage(int amount) {
     if (dead || invulnTimer > 0.f || amount <= 0) return false;
     healthComp->changeHealth(-amount);
-    invulnTimer = invulnerableTime;
+    invulnTimer = cfg().invulnerableTime;
     if (healthComp->getHealth() <= 0) {
         dead = true;
         attacking = shouting = false;
@@ -193,8 +190,8 @@ void Player::update(Game* game, float elapsed) {
         fireSpawnedThisShout = true;
         game->addEntity(createFire());
         if (auto audio = ServiceLocator::getAudio()) audio->playSound("fire");
-        addWood(-shootingCost);
-        shootCooldown = shootCooldownTime;
+        addWood(-cfg().shootingCost);
+        shootCooldown = cfg().shootCooldown;
         if (observer) observer->onShoutPerformed();
     }
 
@@ -243,8 +240,8 @@ Rectangle Player::getAttackBox() const {
     float right  = left + hitboxLocal.width;
     const float top    = pos.y + hitboxLocal.top - 10.f;
     const float bottom = pos.y + hitboxLocal.top + hitboxLocal.height + 10.f;
-    if (spriteSheet.getSpriteDirection() == Direction::Left) left -= axeReach;
-    else                                                    right += axeReach;
+    if (spriteSheet.getSpriteDirection() == Direction::Left) left -= cfg().axeReach;
+    else                                                    right += cfg().axeReach;
     return Rectangle(Vector2f(left, top), Vector2f(right, bottom));
 }
 
@@ -262,13 +259,13 @@ void Player::hitEnemy(Entity* entity) {
     auto enemy = dynamic_cast<Enemy*>(entity);
     if (!enemy || !enemy->isAlive()) return;
     if (hitThisSwing.insert(enemy->getID()).second) {
-        enemy->takeDamage(axeDamage);   // kills are credited by Game
+        enemy->takeDamage(cfg().axeDamage);   // kills are credited by Game
     }
 }
 
 void Player::addWood(int w) {
     wood += w;
-    if (wood > maxWood) { wood = maxWood; }
+    if (wood > cfg().maxWood) { wood = cfg().maxWood; }
     if (wood < 0) { wood = 0; }
 }
 

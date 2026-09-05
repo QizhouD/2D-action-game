@@ -3,16 +3,16 @@
 #include "../../include/components/VelocityComponent.h"
 #include "../../include/core/Game.h"
 #include "../../include/graphics/ParticleSystem.h"
+#include "../../include/core/Balance.h"
 #include <cmath>
 
-const float Fire::speed = 240.f;
-
-Fire::Fire() : Entity(EntityType::FIRE) {
-    ttl = std::make_shared<TTLComponent>(startTimeToLive);
+Fire::Fire() : Entity(EntityType::FIRE), damage(Balance::get().fire.damage) {
+    const auto& cfg = Balance::get().fire;
+    ttl = std::make_shared<TTLComponent>(cfg.ttlTicks);
     addComponent(ttl);
 
     // Direction is set by the spawner; the speed factor turns it into px/s.
-    velocity = std::make_shared<VelocityComponent>(speed);
+    velocity = std::make_shared<VelocityComponent>(cfg.speed);
     addComponent(velocity);
 }
 
@@ -22,7 +22,7 @@ void Fire::init(const std::string& textureFile, float scale) {
     Entity::init(textureFile, scale);
     // Rotate around the centre so the sprite can point in any direction while
     // the hitbox/position keep using the top-left corner.
-    sprite.setOrigin(texture.getSize().x * 0.5f, texture.getSize().y * 0.5f);
+    sprite.setOrigin(texture->getSize().x * 0.5f, texture->getSize().y * 0.5f);
     // Slightly smaller hitbox than the sprite: the flame art has soft edges.
     const sf::Vector2f size = getSpriteSize();
     setHitbox(size.x * 0.15f, size.y * 0.15f, size.x * 0.7f, size.y * 0.7f);

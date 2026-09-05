@@ -33,8 +33,7 @@ private:
     void drawToasts(Window& window, const sf::Vector2f& logical);
 
     const sf::Font* font = nullptr;
-    sf::Texture woodIcon;
-    sf::Sprite woodSprite;
+    sf::Sprite woodSprite;      // texture owned by ResourceManager
     std::deque<Toast> toasts;
     float damageFlash = 0.f;
     float pulse = 0.f;      // for blinking prompts

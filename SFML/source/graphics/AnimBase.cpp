@@ -6,10 +6,10 @@ AnimBase::AnimBase() :
 	startFrame(0),
 	endFrame(0),
 	frameRow(0),
-	frameTime(1.f),
-	elapsedTime(0.f),
 	frameActionStart(-1),
 	frameActionEnd(-1),
+	frameTime(1.f),
+	elapsedTime(0.f),
 	loop(false),
 	playing(false),
 	spriteSheet(nullptr)

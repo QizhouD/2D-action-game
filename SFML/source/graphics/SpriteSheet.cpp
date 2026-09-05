@@ -1,13 +1,14 @@
 #include "../../include/graphics/SpriteSheet.h"
 #include "../../include/graphics/AnimDirectional.h"
+#include "../../include/core/ResourceManager.h"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 
 SpriteSheet::SpriteSheet() :
-    curAnimation(nullptr),
     spriteScale(1.f, 1.f),
-    direction(Direction::Right)
+    direction(Direction::Right),
+    curAnimation(nullptr)
 {
 }
 
@@ -17,9 +18,6 @@ SpriteSheet::~SpriteSheet() {
 
 void SpriteSheet::releaseSheet() {
     curAnimation = nullptr;
-    for (auto& pair : animations) {
-        delete pair.second;
-    }
     animations.clear();
 }
 
@@ -64,9 +62,8 @@ bool SpriteSheet::loadSheet(const std::string& file) {
         if (type == "Texture") {
             std::string textureFile;
             keystream >> textureFile;
-            if (!texture.loadFromFile(textureFile))
-                throw std::runtime_error("Texture file not found: " + textureFile);
-            sprite.setTexture(texture);
+            texture = &ResourceManager::get().texture(textureFile);
+            sprite.setTexture(*texture, true);
         }
         else if (type == "Size") {
             keystream >> spriteSize.x >> spriteSize.y;
@@ -84,9 +81,9 @@ bool SpriteSheet::loadSheet(const std::string& file) {
             keystream >> name;
             if (animations.find(name) != animations.end())
                 throw std::runtime_error("Duplicated animation: " + name + " in sprite sheet " + file);
-            AnimBase* anim = nullptr;
+            std::unique_ptr<AnimBase> anim;
             if (animType == "Directional")
-                anim = new AnimDirectional();
+                anim = std::make_unique<AnimDirectional>();
             else
                 throw std::runtime_error("Unknown animation type: " + animType + " in sprite sheet " + file);
 
@@ -94,7 +91,7 @@ bool SpriteSheet::loadSheet(const std::string& file) {
             anim->setSpriteSheet(this);
             anim->setName(name);
             anim->reset();
-            animations.emplace(name, anim);
+            animations.emplace(name, std::move(anim));
         }
     }
     sheet.close();
@@ -108,10 +105,10 @@ AnimBase* SpriteSheet::getCurrentAnim() const {
 bool SpriteSheet::setAnimation(const std::string& name, bool play, bool loop, bool restart) {
     auto itr = animations.find(name);
     if (itr == animations.end()) return false;
-    if (itr->second == curAnimation && !restart) return false;
+    if (itr->second.get() == curAnimation && !restart) return false;
     if (curAnimation)
         curAnimation->stop();
-    curAnimation = itr->second;
+    curAnimation = itr->second.get();
     curAnimation->setLooping(loop);
     if (play)
         curAnimation->play();

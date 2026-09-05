@@ -1,9 +1,10 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <memory>
 #include <unordered_map>
 #include "AnimBase.h"
 
-using Animations = std::unordered_map<std::string, AnimBase*>;
+using Animations = std::unordered_map<std::string, std::unique_ptr<AnimBase>>;
 enum class Direction { Right = 0, Left };
 
 class SpriteSheet {
@@ -38,7 +39,7 @@ public:
     void draw(sf::RenderWindow* window);
 
 private:
-    sf::Texture texture;
+    const sf::Texture* texture = nullptr;   // owned by ResourceManager
     sf::Sprite sprite;
     sf::Vector2i spriteSize;
     sf::Vector2f spriteScale;

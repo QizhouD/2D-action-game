@@ -12,7 +12,6 @@
 #include <random>
 #include <SFML/System/Time.hpp>
 #include "../../include/systems/Systems.h"
-#include "../../include/utils/PackedArray.h"
 #include "../../include/utils/Observer.h"
 #include <unordered_map>
 #include <functional> 
@@ -24,14 +23,7 @@ class Enemy;
 class System;
 
 using EntityID = unsigned int;
-enum class ECSType { BIG_ARRAY, ARCHETYPES, PACKED_ARRAY };
 enum class GameState { MainMenu, Playing, Paused, LevelClear, GameOver, Victory };
-
-class Archetype {
-public:
-    std::vector<std::shared_ptr<Entity>> entities; // Entities sharing the same component structure
-    Bitmask componentMask;                         // Bitmask representing common components
-};
 
 class Game {
 public:
@@ -41,7 +33,7 @@ public:
 
     void registerCollisionCallback(EntityType type, std::function<void(Entity*)> callback);
 
-    Game(ECSType type = ECSType::BIG_ARRAY);
+    Game();
     ~Game();
 
     // Loads assets and the level list, shows the main menu.
@@ -111,10 +103,8 @@ private:
     void placeInTile(Entity& ent, int col, int row) const;
 
     // --- Simulation --------------------------------------------------------
+    // Runs every System over every live entity (simple "big array" ECS).
     void runSystems(float elapsed);
-    void updateArchetypes(float elapsed);
-    void bigArray(float elapsed);
-    void updatePackedArray(float elapsed);
     void handleCollisions();
     void checkLevelProgress();
     void removeDeletedEntities();
@@ -145,11 +135,6 @@ private:
     EntityID entityCounter;
     std::shared_ptr<Player> player;
     std::unique_ptr<InputHandler> inputHandler;
-    std::vector<std::shared_ptr<System>> graphicsSystems;
-    //variables for ECS architecture selection
-    ECSType ecsType;
-    std::vector<Archetype> archetypes;  // For Archetypes ECS
-    PackedArray<Entity> packedEntities; // Packed storage
 
     std::mt19937 rng;
 

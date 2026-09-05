@@ -103,7 +103,7 @@ protected:
     sf::FloatRect hitboxLocal;
     bool isSpriteSheet;
     SpriteSheet spriteSheet;
-    sf::Texture texture;
+    const sf::Texture* texture = nullptr;   // owned by ResourceManager
     sf::Sprite sprite;
     bool deleted;
     Bitmask componentSet;

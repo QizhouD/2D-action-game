@@ -1,8 +1,10 @@
 #pragma once
 #include "Entity.h"
+#include "../../include/core/Balance.h"
 #include <string>
 
 // Pickups never move; their bounding box is fixed at init/setPosition time.
+// Amounts come from Balance::get().pickup.
 
 class Potion : public Entity {
 public:
@@ -11,9 +13,7 @@ public:
 
     void update(Game*, float = 1.0f) override {}
     bool blocksOnWalls() const override { return false; }
-    int getHealth() const { return potionHealth; }
-protected:
-    const int potionHealth = 10;
+    int getHealth() const { return Balance::get().pickup.potionHeal; }
 };
 
 class Log : public Entity {
@@ -23,7 +23,5 @@ public:
 
     void update(Game*, float = 1.0f) override {}
     bool blocksOnWalls() const override { return false; }
-    int getWood() const { return woodAdded; }
-protected:
-    const int woodAdded = 15;
+    int getWood() const { return Balance::get().pickup.logWood; }
 };

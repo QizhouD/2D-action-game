@@ -9,17 +9,9 @@
 class InputComponent;
 class Fire;
 
+// Tuning values (speed, HP, axe damage, ...) come from Balance::get().player.
 class Player : public Entity {
 public:
-    static const int startingHealth = 80;
-    static const int maxHealth = 100;
-    static const int maxWood = 999;
-    static const float playerSpeed;       // pixels per second
-    static const int   shootingCost;      // wood per fireball
-    static const float shootCooldownTime; // seconds between fireballs
-    static const int   axeDamage;         // per hit on an enemy
-    static const float invulnerableTime;  // seconds of i-frames after being hit
-
     Player();
     ~Player() override;
 
@@ -28,7 +20,6 @@ public:
     void handleEnemyCollision(Entity* enemy);
 
     // Axe: the swing has its own reach in front of the dwarf.
-    static const float axeReach;              // px beyond the body hitbox
     bool isSwingActive() const;               // attack animation on its action frames
     Rectangle getAttackBox() const;
     void chopLog(Entity* log);                // once per log
@@ -57,7 +48,6 @@ public:
     // and fired as soon as it is free, so mashed inputs are not dropped.
     void startAttack();
     void startShout();
-    static const float inputBufferTime;   // seconds
 
     // Last movement direction (4-way), used for aiming fireballs.
     const sf::Vector2f& getFacing() const { return facing; }

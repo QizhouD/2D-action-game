@@ -11,6 +11,7 @@
 .EXAMPLE
     .\build.ps1                 # Release build into .\build
     .\build.ps1 -Run            # build then launch the game
+    .\build.ps1 -Test           # build then run the unit tests (ctest)
     .\build.ps1 -Config Debug
     .\build.ps1 -ToolchainDir E:\toolchain
 #>
@@ -19,6 +20,7 @@ param(
     [ValidateSet("Release", "Debug")][string]$Config = "Release",
     [string]$BuildDir = "build",
     [switch]$Run,
+    [switch]$Test,
     [switch]$Clean
 )
 
@@ -46,6 +48,11 @@ cmake --build $BuildDir
 if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 Write-Host "`nBuilt: $(Resolve-Path (Join-Path $BuildDir 'MiniGame.exe'))" -ForegroundColor Green
+
+if ($Test) {
+    ctest --test-dir $BuildDir --output-on-failure
+    if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+}
 
 if ($Run) {
     Push-Location $BuildDir

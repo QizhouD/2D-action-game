@@ -7,7 +7,7 @@ TTLSystem::TTLSystem() {
     componentMask.turnOnBit(static_cast<unsigned int>(ComponentID::TTL));
 }
 
-void TTLSystem::update(Game* game, Entity* entity, float) {
+void TTLSystem::update(Game* /*game*/, Entity* entity, float) {
     auto ttlComp = entity->getTTLComponent();
     if (!ttlComp) {
         throw std::runtime_error("TTLSystem: Entity lacks TTLComponent");

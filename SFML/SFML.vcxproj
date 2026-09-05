@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -138,7 +138,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="source\Components\InputComponent.cpp" />
-    <ClCompile Include="source\Components\PlayerStateComponent.cpp" />
     <ClCompile Include="source\Components\VelocityComponent.cpp" />
     <ClCompile Include="source\core\AudioManager.cpp" />
     <ClCompile Include="source\core\Board.cpp" />
@@ -155,29 +154,23 @@
     <ClCompile Include="source\graphics\Hud.cpp" />
     <ClCompile Include="source\graphics\ParticleSystem.cpp" />
     <ClCompile Include="source\core\SaveData.cpp" />
+    <ClCompile Include="source\core\ResourceManager.cpp" />
+    <ClCompile Include="source\core\Balance.cpp" />
+    <ClCompile Include="source\core\LevelParser.cpp" />
     <ClCompile Include="source\graphics\SpriteSheet.cpp" />
-    <ClCompile Include="source\graphics\SpriteSheetGraphicsComponent.cpp" />
     <ClCompile Include="source\graphics\Window.cpp" />
     <ClCompile Include="source\systems\AISystem.cpp" />
-    <ClCompile Include="source\systems\ColliderSystem.cpp" />
-    <ClCompile Include="source\systems\GraphicsSystem.cpp" />
     <ClCompile Include="source\systems\InputSystem.cpp" />
     <ClCompile Include="source\systems\MovementSystem.cpp" />
-    <ClCompile Include="source\systems\PrintDebugSystem.cpp" />
     <ClCompile Include="source\systems\TTLSystem.cpp" />
     <ClCompile Include="source\utils\Rectangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Components\AIComponent.h" />
-    <ClInclude Include="include\Components\ColliderComponent.h" />
     <ClInclude Include="include\Components\Components.h" />
-    <ClInclude Include="include\Components\GraphicsComponent.h" />
     <ClInclude Include="include\Components\HealthComponent.h" />
     <ClInclude Include="include\Components\InputComponent.h" />
-    <ClInclude Include="include\Components\LogicComponent.h" />
-    <ClInclude Include="include\Components\PlayerStateComponent.h" />
     <ClInclude Include="include\Components\PositionComponent.h" />
-    <ClInclude Include="include\Components\SpriteSheetGraphicsComponent.h" />
     <ClInclude Include="include\Components\TTLComponent.h" />
     <ClInclude Include="include\Components\VelocityComponent.h" />
     <ClInclude Include="include\core\AudioManager.h" />
@@ -197,13 +190,14 @@
     <ClInclude Include="include\graphics\Hud.h" />
     <ClInclude Include="include\graphics\ParticleSystem.h" />
     <ClInclude Include="include\core\SaveData.h" />
+    <ClInclude Include="include\core\ResourceManager.h" />
+    <ClInclude Include="include\core\Balance.h" />
+    <ClInclude Include="include\core\LevelParser.h" />
     <ClInclude Include="include\graphics\SpriteSheet.h" />
-    <ClInclude Include="include\graphics\TileTexture.h" />
     <ClInclude Include="include\graphics\Window.h" />
     <ClInclude Include="include\systems\Systems.h" />
     <ClInclude Include="include\utils\Bitmask.h" />
     <ClInclude Include="include\utils\Observer.h" />
-    <ClInclude Include="include\utils\PackedArray.h" />
     <ClInclude Include="include\utils\Rectangle.h" />
     <ClInclude Include="include\utils\Vector2.h" />
   </ItemGroup>

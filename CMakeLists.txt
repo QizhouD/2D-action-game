@@ -25,17 +25,24 @@ find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system audio)
 # ---------------------------------------------------------------------------
 set(GAME_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/SFML)
 
+# Pure C++ logic with no SFML dependency: shared by the game and the tests.
+add_library(minigame_core STATIC
+    ${GAME_ROOT}/source/core/Balance.cpp
+    ${GAME_ROOT}/source/core/LevelParser.cpp
+    ${GAME_ROOT}/source/core/SaveData.cpp
+)
+target_include_directories(minigame_core PUBLIC ${GAME_ROOT})
+
 set(GAME_SOURCES
     ${GAME_ROOT}/main.cpp
     ${GAME_ROOT}/source/Components/InputComponent.cpp
-    ${GAME_ROOT}/source/Components/PlayerStateComponent.cpp
     ${GAME_ROOT}/source/Components/VelocityComponent.cpp
     ${GAME_ROOT}/source/core/AudioManager.cpp
     ${GAME_ROOT}/source/core/Board.cpp
     ${GAME_ROOT}/source/core/Game.cpp
     ${GAME_ROOT}/source/core/GameCommand.cpp
     ${GAME_ROOT}/source/core/InputHandler.cpp
-    ${GAME_ROOT}/source/core/SaveData.cpp
+    ${GAME_ROOT}/source/core/ResourceManager.cpp
     ${GAME_ROOT}/source/core/Tile.cpp
     ${GAME_ROOT}/source/entities/Enemy.cpp
     ${GAME_ROOT}/source/entities/Entity.cpp
@@ -46,36 +53,51 @@ set(GAME_SOURCES
     ${GAME_ROOT}/source/graphics/Hud.cpp
     ${GAME_ROOT}/source/graphics/ParticleSystem.cpp
     ${GAME_ROOT}/source/graphics/SpriteSheet.cpp
-    ${GAME_ROOT}/source/graphics/SpriteSheetGraphicsComponent.cpp
     ${GAME_ROOT}/source/graphics/Window.cpp
     ${GAME_ROOT}/source/systems/AISystem.cpp
-    ${GAME_ROOT}/source/systems/ColliderSystem.cpp
-    ${GAME_ROOT}/source/systems/GraphicsSystem.cpp
     ${GAME_ROOT}/source/systems/InputSystem.cpp
     ${GAME_ROOT}/source/systems/MovementSystem.cpp
-    ${GAME_ROOT}/source/systems/PrintDebugSystem.cpp
     ${GAME_ROOT}/source/systems/TTLSystem.cpp
     ${GAME_ROOT}/source/utils/Rectangle.cpp
 )
 
 add_executable(MiniGame ${GAME_SOURCES})
 target_include_directories(MiniGame PRIVATE ${GAME_ROOT})
-target_link_libraries(MiniGame PRIVATE sfml-graphics sfml-window sfml-system sfml-audio)
+target_link_libraries(MiniGame PRIVATE minigame_core sfml-graphics sfml-window sfml-system sfml-audio)
 
-if(MSVC)
-    target_compile_options(MiniGame PRIVATE /W3 /utf-8)
-else()
-    target_compile_options(MiniGame PRIVATE -Wall -Wextra)
-    if(MINGW)
-        # Avoid shipping libstdc++/libgcc DLLs next to the exe.
-        target_link_options(MiniGame PRIVATE -static-libgcc -static-libstdc++ -static)
+# ---------------------------------------------------------------------------
+# Unit tests (no SFML, no window): ctest --test-dir build
+# ---------------------------------------------------------------------------
+option(MINIGAME_BUILD_TESTS "Build unit tests" ON)
+if(MINIGAME_BUILD_TESTS)
+    enable_testing()
+    add_executable(minigame_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main.cpp)
+    target_link_libraries(minigame_tests PRIVATE minigame_core)
+    target_compile_definitions(minigame_tests PRIVATE
+        MINIGAME_LEVELS_DIR="${GAME_ROOT}/levels"
+        MINIGAME_CONFIG_DIR="${GAME_ROOT}/config")
+    add_test(NAME unit COMMAND minigame_tests)
+endif()
+
+foreach(tgt minigame_core MiniGame)
+    if(MSVC)
+        target_compile_options(${tgt} PRIVATE /W3 /utf-8)
+    else()
+        target_compile_options(${tgt} PRIVATE -Wall -Wextra)
+    endif()
+endforeach()
+if(MINGW)
+    # Avoid shipping libstdc++/libgcc DLLs next to the exe.
+    target_link_options(MiniGame PRIVATE -static-libgcc -static-libstdc++ -static)
+    if(TARGET minigame_tests)
+        target_link_options(minigame_tests PRIVATE -static-libgcc -static-libstdc++ -static)
     endif()
 endif()
 
 # ---------------------------------------------------------------------------
 # Runtime assets: copy next to the executable so it can be launched directly.
 # ---------------------------------------------------------------------------
-set(GAME_ASSET_DIRS audio font img levels)
+set(GAME_ASSET_DIRS audio config font img levels)
 foreach(dir ${GAME_ASSET_DIRS})
     add_custom_command(TARGET MiniGame POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
